@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sushi Typing &mdash; Type &amp; Eat</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div id="app">
+
+  <header class="app-header">
+    <h1>🍣 Sushi Typing</h1>
+    <p class="tagline">Type fast, eat well.</p>
+  </header>
+
+  <!-- START SCREEN -->
+  <section id="screen-start" class="screen active">
+    <p class="intro">
+      Pick a sushi course below. You have <strong>60 seconds</strong> to type as many
+      words as you can. Every correct character earns you money &mdash; if you earn
+      enough to cover the course price, the meal is on the house!
+    </p>
+    <div class="course-select">
+      <button class="course-btn" data-course="beginner">
+        <span class="course-emoji">🍙</span>
+        <span class="course-name">Beginner</span>
+        <span class="course-price">$10 course</span>
+      </button>
+      <button class="course-btn" data-course="standard">
+        <span class="course-emoji">🍣</span>
+        <span class="course-name">Standard</span>
+        <span class="course-price">$30 course</span>
+      </button>
+      <button class="course-btn" data-course="pro">
+        <span class="course-emoji">🍱</span>
+        <span class="course-name">Pro</span>
+        <span class="course-price">$50 course</span>
+      </button>
+    </div>
+    <p id="start-error" class="error-msg"></p>
+  </section>
+
+  <!-- GAME SCREEN -->
+  <section id="screen-game" class="screen">
+    <div class="hud">
+      <div class="hud-item">⏱ <span id="time-left">60</span>s</div>
+      <div class="hud-item">💰 $<span id="earned">0.00</span></div>
+      <div class="hud-item">🎯 Target $<span id="target-amount">10</span></div>
+    </div>
+
+    <div class="conveyor">
+      <div class="belt-track">
+        <div class="belt-plates" id="belt-plates"></div>
+      </div>
+    </div>
+
+    <div class="word-stage">
+      <div class="word-display" id="word-display"></div>
+      <input
+        type="text"
+        id="type-input"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+        placeholder="Start typing…"
+      />
+    </div>
+  </section>
+
+  <!-- RESULT SCREEN -->
+  <section id="screen-result" class="screen">
+    <h2 id="result-title"></h2>
+    <div class="result-stats">
+      <p>💰 Earned: $<span id="res-earned"></span></p>
+      <p>🎯 Course price: $<span id="res-target"></span></p>
+      <p>⌨️ Speed: <span id="res-speed"></span> chars/sec</p>
+      <p>✅ Accuracy: <span id="res-accuracy"></span>%</p>
+    </div>
+
+    <form id="leaderboard-form">
+      <input type="text" id="player-name" maxlength="20" placeholder="Your name" required />
+      <button type="submit">Save score</button>
+    </form>
+
+    <div id="leaderboard" class="leaderboard"></div>
+
+    <button id="retry-btn" class="retry-btn">Play again</button>
+  </section>
+
+</div>
+<script src="js/app.js"></script>
+</body>
+</html>
