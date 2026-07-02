@@ -4,48 +4,72 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Holds the sushi-themed word/phrase lists used by the typing game, grouped by difficulty. */
+/**
+ * Holds the word/phrase lists used by the typing game, grouped by difficulty.
+ *
+ * The original sushida.net splits its huge word pool into three courses
+ * purely by input length (roughly 2-8 / 5-10 / 9+ characters) and draws from
+ * everyday vocabulary, idioms, and pop culture rather than sushi terms
+ * specifically -- the sushi theme is just the visual wrapper. This bank
+ * mirrors that length-tiered, subject-agnostic structure with original
+ * English content instead of translating the source site's word list.
+ */
 final class WordBank {
 
-    // Mirrors the original sushida.net difficulty curve: easy is single
-    // words, medium is short natural sentences, hard is long, complex ones.
     private static final List<String> EASY = List.of(
-        "sushi", "wasabi", "ginger", "salmon", "shrimp", "unagi", "sashimi",
-        "chopsticks", "soy sauce", "rice ball", "green tea", "seaweed",
-        "avocado", "cucumber", "octopus", "tuna", "roll", "plate", "miso soup",
-        "rice vinegar", "tempura", "nori sheet", "fish roe", "sea urchin",
-        "sushi chef", "raw fish", "crab", "squid", "sesame seeds"
+        "artist", "sunrise", "backpack", "penguin", "campfire", "umbrella",
+        "notebook", "goldfish", "raincoat", "hot spring", "moonlight",
+        "snowflake", "seashell", "otter", "lighthouse", "picnic", "bicycle",
+        "waterfall", "firefly", "keyboard", "mouse click", "blue sky",
+        "autumn leaves", "love letter", "ice cream", "guitar solo",
+        "city lights", "morning coffee", "silver lining", "paper airplane"
     );
 
     private static final List<String> MEDIUM = List.of(
-        "The chef slices the tuna with a sharp knife.",
-        "Fresh wasabi adds a spicy kick.",
-        "This roll is wrapped in crisp seaweed.",
-        "Please pass the soy sauce.",
-        "The rice is seasoned with vinegar.",
-        "Salmon nigiri melts in your mouth.",
-        "We ordered a plate of spicy tuna rolls.",
-        "The conveyor belt carries fresh plates by.",
-        "Dip the sushi lightly in soy sauce.",
-        "Pickled ginger cleanses the palate between bites.",
-        "The chef presses the rice by hand.",
-        "Green tea pairs well with sushi.",
-        "This restaurant is famous for its sashimi.",
-        "The eel sauce is sweet and rich.",
-        "A good sushi chef trains for years."
+        "Better late than never.",
+        "Actions speak louder than words.",
+        "The early bird catches the worm.",
+        "Practice makes perfect.",
+        "It's raining cats and dogs.",
+        "Piece of cake!",
+        "Time flies when you're having fun.",
+        "Curiosity killed the cat.",
+        "Every cloud has a silver lining.",
+        "Don't judge a book by its cover.",
+        "Kill two birds with one stone.",
+        "The ball is in your court.",
+        "Break a leg out there!",
+        "Once in a blue moon.",
+        "When pigs fly.",
+        "Barking up the wrong tree.",
+        "Costs an arm and a leg.",
+        "Let the cat out of the bag.",
+        "Better safe than sorry.",
+        "Please hold while we transfer your call.",
+        "Your package has been delivered.",
+        "Don't forget to water the plants.",
+        "Wi-Fi password, please?",
+        "I think we're out of coffee again.",
+        "Can you send that file one more time?"
     );
 
     private static final List<String> HARD = List.of(
-        "The sushi chef carefully selects the freshest tuna from the market every single morning.",
-        "A skilled itamae balances rice temperature, vinegar ratio, and fish freshness in every piece.",
-        "Diners often watch in awe as the chef's knife glides through the silver skin of the mackerel.",
-        "Traditional sushi rice is seasoned with a delicate blend of rice vinegar, sugar, and salt.",
-        "The omakase menu changes daily depending on what the fish market has to offer.",
-        "Some sushi restaurants age their tuna for several days to deepen its flavor.",
-        "A great piece of nigiri should have a perfect balance between the rice and the fish.",
-        "The conveyor belt sushi restaurant lets customers pick any plate that catches their eye.",
-        "Learning to properly cook sushi rice can take years of daily practice.",
-        "The chef garnished the platter with delicate slices of pickled ginger and fresh shiso leaves."
+        "The grass is always greener on the other side of the fence.",
+        "You can lead a horse to water, but you can't make it drink.",
+        "Rome wasn't built in a day, so take your time.",
+        "The early bird catches the worm, but the second mouse gets the cheese.",
+        "Please restart your computer and try logging in again.",
+        "I could have sworn I left my phone right here a minute ago.",
+        "Would you like fries with that, or are you watching your diet today?",
+        "The password you entered does not meet the security requirements.",
+        "According to all known laws of aviation, bees really shouldn't be able to fly.",
+        "We interrupt this program to bring you a special weather bulletin.",
+        "Congratulations, you have been selected as our grand prize winner!",
+        "Please remain seated until the seatbelt sign has been turned off.",
+        "Somewhere between yesterday's mistakes and tomorrow's uncertainty lies today.",
+        "Insert coin to continue, or press start to try again.",
+        "The meeting that could have been an email is starting in five minutes.",
+        "Warning: low battery, please connect your charger as soon as possible."
     );
 
     private WordBank() {
