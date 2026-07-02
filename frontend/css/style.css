@@ -160,6 +160,7 @@ body {
 /* GAME SCREEN */
 .hud {
   display: flex;
+  align-items: center;
   justify-content: space-around;
   font-size: 1.1rem;
   font-weight: 700;
@@ -168,6 +169,22 @@ body {
   border-radius: 10px;
   padding: 10px;
   box-shadow: 0 2px 8px var(--shadow);
+}
+
+.home-btn {
+  cursor: pointer;
+  border: 2px solid var(--wood);
+  background: #fff;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--dark);
+  transition: background 0.15s ease;
+}
+
+.home-btn:hover {
+  background: #fff7ea;
 }
 
 .conveyor {
@@ -219,7 +236,10 @@ body {
 }
 
 .word-display .char-correct {
-  color: var(--green);
+  color: #1f6b23;
+  font-weight: 700;
+  background: rgba(63, 145, 66, 0.18);
+  border-radius: 3px;
 }
 
 .word-display .char-wrong {
