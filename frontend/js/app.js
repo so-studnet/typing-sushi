@@ -6,8 +6,10 @@
     standard: { label: "Standard", target: 30, difficulty: "medium", rate: 0.05 },
     pro: { label: "Pro", target: 50, difficulty: "hard", rate: 0.05 },
   };
-  const GAME_SECONDS = 60;
+  const DEFAULT_DURATION = 60;
   const SUSHI_EMOJI = ["🍣", "🍙", "🍱", "🍤", "🐟", "🍚"];
+
+  let selectedDuration = DEFAULT_DURATION;
 
   const screens = {
     start: document.getElementById("screen-start"),
@@ -80,7 +82,8 @@
       earned: 0,
       totalKeystrokes: 0,
       correctKeystrokes: 0,
-      secondsLeft: GAME_SECONDS,
+      totalSeconds: selectedDuration,
+      secondsLeft: selectedDuration,
       startedAt: Date.now(),
       timerId: null,
       finished: false,
@@ -88,7 +91,7 @@
 
     el.targetAmount.textContent = course.target.toFixed(0);
     el.earned.textContent = "0.00";
-    el.timeLeft.textContent = String(GAME_SECONDS);
+    el.timeLeft.textContent = String(selectedDuration);
     el.typeInput.value = "";
 
     renderBelt();
@@ -176,7 +179,7 @@
     clearInterval(state.timerId);
     el.typeInput.disabled = true;
 
-    const elapsed = GAME_SECONDS;
+    const elapsed = state.totalSeconds;
     const speed = state.correctKeystrokes / elapsed;
     const accuracy = state.totalKeystrokes === 0
       ? 100
@@ -254,6 +257,13 @@
     showScreen("start");
   }
 
+  document.querySelectorAll(".duration-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      selectedDuration = Number(btn.dataset.duration);
+      document.querySelectorAll(".duration-btn").forEach((b) => b.classList.remove("selected"));
+      btn.classList.add("selected");
+    });
+  });
   document.querySelectorAll(".course-btn").forEach((btn) => {
     btn.addEventListener("click", () => startGame(btn.dataset.course));
   });

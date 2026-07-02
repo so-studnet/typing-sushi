@@ -17,10 +17,18 @@
   <!-- START SCREEN -->
   <section id="screen-start" class="screen active">
     <p class="intro">
-      Pick a sushi course below. You have <strong>60 seconds</strong> to type as many
-      words as you can. Every correct character earns you money &mdash; if you earn
-      enough to cover the course price, the meal is on the house!
+      Pick a sushi course and a time limit below. Type as many words as you can
+      before time runs out. Every correct character earns you money &mdash; if you
+      earn enough to cover the course price, the meal is on the house!
     </p>
+    <div class="duration-select">
+      <span class="duration-label">Time limit</span>
+      <div class="duration-options">
+        <button class="duration-btn selected" data-duration="60">1 min</button>
+        <button class="duration-btn" data-duration="120">2 min</button>
+        <button class="duration-btn" data-duration="180">3 min</button>
+      </div>
+    </div>
     <div class="course-select">
       <button class="course-btn" data-course="beginner">
         <span class="course-emoji">🍙</span>
