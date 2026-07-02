@@ -34,9 +34,42 @@
     playerName: document.getElementById("player-name"),
     leaderboard: document.getElementById("leaderboard"),
     retryBtn: document.getElementById("retry-btn"),
+    homeBtn: document.getElementById("home-btn"),
   };
 
   let state = null;
+  let audioCtx = null;
+
+  function getAudioCtx() {
+    if (!audioCtx) {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AudioContextClass();
+    }
+    return audioCtx;
+  }
+
+  function playTypeSound(correct) {
+    try {
+      const ctx = getAudioCtx();
+      if (ctx.state === "suspended") ctx.resume();
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = correct ? "square" : "sawtooth";
+      osc.frequency.value = correct ? 720 : 180;
+      gain.gain.value = 0.06;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      const now = ctx.currentTime;
+      const duration = correct ? 0.05 : 0.12;
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      osc.start(now);
+      osc.stop(now + duration);
+    } catch (err) {
+      // Audio is a nice-to-have; ignore failures (e.g. unsupported browser).
+    }
+  }
 
   function showScreen(name) {
     Object.values(screens).forEach((s) => s.classList.remove("active"));
@@ -150,10 +183,12 @@
       for (const ch of newChars) {
         state.totalKeystrokes += 1;
         const idx = state.typed.length;
-        if (word[idx] === ch) {
+        const isCorrect = word[idx] === ch;
+        if (isCorrect) {
           state.correctKeystrokes += 1;
           state.earned += state.rate;
         }
+        playTypeSound(isCorrect);
         state.typed += ch;
       }
     } else {
@@ -257,6 +292,15 @@
     showScreen("start");
   }
 
+  function quitToStart() {
+    if (state && !state.finished) {
+      if (!window.confirm("Quit this round and return to the home screen?")) return;
+      clearInterval(state.timerId);
+    }
+    el.typeInput.disabled = false;
+    resetToStart();
+  }
+
   document.querySelectorAll(".duration-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       selectedDuration = Number(btn.dataset.duration);
@@ -270,4 +314,5 @@
   el.typeInput.addEventListener("input", onInput);
   el.leaderboardForm.addEventListener("submit", submitScore);
   el.retryBtn.addEventListener("click", resetToStart);
+  el.homeBtn.addEventListener("click", quitToStart);
 })();
