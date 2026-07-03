@@ -1,94 +1,45 @@
 package com.typingsushi;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Holds the word/phrase lists used by the typing game, grouped by difficulty.
  *
- * The original sushida.net splits its huge word pool into three courses
- * purely by input length (roughly 2-8 / 5-10 / 9+ characters) and draws from
- * everyday vocabulary, idioms, and pop culture rather than sushi terms
- * specifically -- the sushi theme is just the visual wrapper. This bank
- * mirrors that length-tiered, subject-agnostic structure with original
- * English content instead of translating the source site's word list.
+ * The actual content lives in plain text files under wordbank/ (one
+ * entry per line; '#' starts a comment, blank lines are ignored) instead of
+ * being hardcoded in this class. That way the game's quizzed words can be
+ * edited and maintained -- add, remove, or rebalance entries -- by editing
+ * those .txt files and restarting the server, with no Java changes or
+ * recompilation required.
  */
 final class WordBank {
 
-    private static final List<String> EASY = List.of(
-        "artist", "sunrise", "backpack", "penguin", "campfire", "umbrella",
-        "notebook", "goldfish", "raincoat", "hot spring", "moonlight",
-        "snowflake", "seashell", "otter", "lighthouse", "picnic", "bicycle",
-        "waterfall", "firefly", "keyboard", "mouse click", "blue sky",
-        "autumn leaves", "love letter", "ice cream", "guitar solo",
-        "city lights", "morning coffee", "silver lining", "paper airplane"
+    // Small built-in safety net so the game still works if wordbank/ is
+    // missing or a file fails to load, rather than serving empty quizzes.
+    private static final Map<String, List<String>> FALLBACK = Map.of(
+        "easy.txt", List.of("sushi", "wasabi", "green tea"),
+        "medium.txt", List.of("Practice makes perfect.", "Better late than never."),
+        "hard.txt", List.of("Please restart your computer and try logging in again.")
     );
 
-    private static final List<String> MEDIUM = List.of(
-        "Better late than never.",
-        "Actions speak louder than words.",
-        "The early bird catches the worm.",
-        "Practice makes perfect.",
-        "It's raining cats and dogs.",
-        "Piece of cake!",
-        "Time flies when you're having fun.",
-        "Curiosity killed the cat.",
-        "Every cloud has a silver lining.",
-        "Don't judge a book by its cover.",
-        "Kill two birds with one stone.",
-        "The ball is in your court.",
-        "Break a leg out there!",
-        "Once in a blue moon.",
-        "When pigs fly.",
-        "Barking up the wrong tree.",
-        "Costs an arm and a leg.",
-        "Let the cat out of the bag.",
-        "Better safe than sorry.",
-        "Please hold while we transfer your call.",
-        "Your package has been delivered.",
-        "Don't forget to water the plants.",
-        "Wi-Fi password, please?",
-        "I think we're out of coffee again.",
-        "Can you send that file one more time?"
-    );
-
-    private static final List<String> HARD = List.of(
-        "The grass is always greener on the other side of the fence.",
-        "You can lead a horse to water, but you can't make it drink.",
-        "Rome wasn't built in a day, so take your time.",
-        "The early bird catches the worm, but the second mouse gets the cheese.",
-        "Please restart your computer and try logging in again.",
-        "I could have sworn I left my phone right here a minute ago.",
-        "Would you like fries with that, or are you watching your diet today?",
-        "The password you entered does not meet the security requirements.",
-        "According to all known laws of aviation, bees really shouldn't be able to fly.",
-        "We interrupt this program to bring you a special weather bulletin.",
-        "Congratulations, you have been selected as our grand prize winner!",
-        "Please remain seated until the seatbelt sign has been turned off.",
-        "Somewhere between yesterday's mistakes and tomorrow's uncertainty lies today.",
-        "Insert coin to continue, or press start to try again.",
-        "The meeting that could have been an email is starting in five minutes.",
-        "Warning: low battery, please connect your charger as soon as possible."
-    );
+    private static final Map<String, List<String>> POOLS = loadAllPools();
 
     private WordBank() {
     }
 
     static List<String> get(String difficulty, int count) {
-        List<String> pool;
-        switch (difficulty == null ? "" : difficulty.toLowerCase()) {
-            case "easy":
-                pool = EASY;
-                break;
-            case "hard":
-                pool = HARD;
-                break;
-            case "medium":
-            default:
-                pool = MEDIUM;
-                break;
-        }
+        List<String> pool = POOLS.getOrDefault(
+            difficulty == null ? "" : difficulty.toLowerCase(),
+            POOLS.get("medium")
+        );
 
         List<String> result = new ArrayList<>();
         List<String> shuffled = new ArrayList<>(pool);
@@ -97,5 +48,41 @@ final class WordBank {
             result.addAll(shuffled);
         }
         return result.subList(0, count);
+    }
+
+    private static Map<String, List<String>> loadAllPools() {
+        Path dir = resolveWordBankDir();
+        Map<String, List<String>> pools = new HashMap<>();
+        pools.put("easy", loadPool(dir, "easy.txt"));
+        pools.put("medium", loadPool(dir, "medium.txt"));
+        pools.put("hard", loadPool(dir, "hard.txt"));
+        return pools;
+    }
+
+    private static Path resolveWordBankDir() {
+        Path here = Path.of("wordbank");
+        if (Files.isDirectory(here)) return here;
+        Path fromProjectRoot = Path.of("backend", "wordbank");
+        if (Files.isDirectory(fromProjectRoot)) return fromProjectRoot;
+        return here;
+    }
+
+    private static List<String> loadPool(Path dir, String filename) {
+        Path file = dir.resolve(filename);
+        List<String> lines = new ArrayList<>();
+        try {
+            for (String line : Files.readAllLines(file, StandardCharsets.UTF_8)) {
+                String trimmed = line.strip();
+                if (trimmed.isEmpty() || trimmed.startsWith("#")) continue;
+                lines.add(trimmed);
+            }
+        } catch (IOException e) {
+            System.err.println("Could not load word bank file " + file + ": " + e.getMessage());
+        }
+        if (lines.isEmpty()) {
+            System.err.println("Word bank file " + file + " is empty or missing; using fallback words.");
+            lines.addAll(FALLBACK.getOrDefault(filename, List.of("sushi")));
+        }
+        return List.copyOf(lines);
     }
 }

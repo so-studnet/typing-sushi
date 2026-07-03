@@ -1,0 +1,36 @@
+# Sushi Typing - easy word list
+#
+# One word/phrase per line. Short single words or 2-word phrases.
+# Lines starting with '#' and blank lines are ignored.
+# Edit this file and restart the server to change what's quizzed.
+
+artist
+sunrise
+backpack
+penguin
+campfire
+umbrella
+notebook
+goldfish
+raincoat
+hot spring
+moonlight
+snowflake
+seashell
+otter
+lighthouse
+picnic
+bicycle
+waterfall
+firefly
+keyboard
+mouse click
+blue sky
+autumn leaves
+love letter
+ice cream
+guitar solo
+city lights
+morning coffee
+silver lining
+paper airplane

@@ -38,6 +38,19 @@ PORT=3000 ./run.sh
 4. Save your score to the leaderboard, which persists across restarts in
    `backend/data/leaderboard.json`.
 
+## Editing the word list
+
+The words/phrases quizzed in the game live in plain text files under
+`backend/wordbank/` (`easy.txt`, `medium.txt`, `hard.txt`) — one entry per
+line. Lines starting with `#` and blank lines are ignored, so you can use
+them for comments/organization.
+
+To add, remove, or rebalance the quizzed content, just edit these files
+directly and restart the server (`./run.sh`) — no Java changes or
+recompilation needed. If a file is ever missing or empty, the server falls
+back to a small built-in word list and logs a warning, rather than failing
+to start.
+
 ## API
 
 - `GET /api/words?difficulty=easy|medium|hard&count=N` — random word list
@@ -55,8 +68,9 @@ frontend/          static game client
 backend/
   src/main/java/com/typingsushi/
     Main.java        HTTP server, routing, static file serving
-    WordBank.java     sushi-themed word lists by difficulty
+    WordBank.java     loads word lists (below) by difficulty
     Leaderboard.java  in-memory + file-persisted top scores
     Json.java         tiny JSON encode/decode helpers
+  wordbank/          editable word/phrase lists (easy.txt, medium.txt, hard.txt)
 run.sh              compile + run
 ```

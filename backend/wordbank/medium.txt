@@ -1,0 +1,31 @@
+# Sushi Typing - medium word list
+#
+# One phrase/sentence per line. Short idioms and everyday phrases.
+# Lines starting with '#' and blank lines are ignored.
+# Edit this file and restart the server to change what's quizzed.
+
+Better late than never.
+Actions speak louder than words.
+The early bird catches the worm.
+Practice makes perfect.
+It's raining cats and dogs.
+Piece of cake!
+Time flies when you're having fun.
+Curiosity killed the cat.
+Every cloud has a silver lining.
+Don't judge a book by its cover.
+Kill two birds with one stone.
+The ball is in your court.
+Break a leg out there!
+Once in a blue moon.
+When pigs fly.
+Barking up the wrong tree.
+Costs an arm and a leg.
+Let the cat out of the bag.
+Better safe than sorry.
+Please hold while we transfer your call.
+Your package has been delivered.
+Don't forget to water the plants.
+Wi-Fi password, please?
+I think we're out of coffee again.
+Can you send that file one more time?
