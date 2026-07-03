@@ -4,33 +4,33 @@
 # Lines starting with '#' and blank lines are ignored.
 # Edit this file and restart the server to change what's quizzed.
 
-artist
-sunrise
-backpack
-penguin
-campfire
-umbrella
-notebook
-goldfish
-raincoat
-hot spring
-moonlight
-snowflake
-seashell
-otter
-lighthouse
-picnic
-bicycle
-waterfall
-firefly
-keyboard
-mouse click
-blue sky
-autumn leaves
-love letter
-ice cream
-guitar solo
-city lights
-morning coffee
-silver lining
-paper airplane
+weekend
+sunflower
+teapot
+raincloud
+jellyfish
+treehouse
+snowman
+campout
+doorbell
+hairbrush
+staircase
+flashlight
+pillow fight
+book club
+coffee mug
+garden gnome
+thunderstorm
+popcorn
+road trip
+board game
+night owl
+morning jog
+tea party
+wind chime
+paper cut
+jump rope
+tree swing
+comic book
+video call
+sock drawer

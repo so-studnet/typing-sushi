@@ -4,28 +4,28 @@
 # Lines starting with '#' and blank lines are ignored.
 # Edit this file and restart the server to change what's quizzed.
 
-Better late than never.
-Actions speak louder than words.
-The early bird catches the worm.
-Practice makes perfect.
-It's raining cats and dogs.
-Piece of cake!
-Time flies when you're having fun.
-Curiosity killed the cat.
-Every cloud has a silver lining.
-Don't judge a book by its cover.
-Kill two birds with one stone.
-The ball is in your court.
-Break a leg out there!
-Once in a blue moon.
-When pigs fly.
-Barking up the wrong tree.
-Costs an arm and a leg.
-Let the cat out of the bag.
-Better safe than sorry.
-Please hold while we transfer your call.
-Your package has been delivered.
-Don't forget to water the plants.
-Wi-Fi password, please?
-I think we're out of coffee again.
-Can you send that file one more time?
+Two heads are better than one.
+Don't count your chickens before they hatch.
+The pen is mightier than the sword.
+A watched pot never boils.
+Slow and steady wins the race.
+Honesty is the best policy.
+You can't have your cake and eat it too.
+Absence makes the heart grow fonder.
+All that glitters is not gold.
+Beggars can't be choosers.
+Birds of a feather flock together.
+Don't put all your eggs in one basket.
+Easy come, easy go.
+Fortune favors the bold.
+Great minds think alike.
+If it ain't broke, don't fix it.
+Laughter is the best medicine.
+Never look a gift horse in the mouth.
+Out of sight, out of mind.
+The proof is in the pudding.
+Where there's smoke, there's fire.
+You reap what you sow.
+Can I get a refill on this coffee?
+Please leave a message after the beep.
+Your table will be ready shortly.
