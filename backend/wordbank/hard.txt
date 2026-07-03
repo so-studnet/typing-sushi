@@ -1,0 +1,22 @@
+# Sushi Typing - hard word list
+#
+# One sentence per line. Long idioms, tech messages, and jokes.
+# Lines starting with '#' and blank lines are ignored.
+# Edit this file and restart the server to change what's quizzed.
+
+The grass is always greener on the other side of the fence.
+You can lead a horse to water, but you can't make it drink.
+Rome wasn't built in a day, so take your time.
+The early bird catches the worm, but the second mouse gets the cheese.
+Please restart your computer and try logging in again.
+I could have sworn I left my phone right here a minute ago.
+Would you like fries with that, or are you watching your diet today?
+The password you entered does not meet the security requirements.
+According to all known laws of aviation, bees really shouldn't be able to fly.
+We interrupt this program to bring you a special weather bulletin.
+Congratulations, you have been selected as our grand prize winner!
+Please remain seated until the seatbelt sign has been turned off.
+Somewhere between yesterday's mistakes and tomorrow's uncertainty lies today.
+Insert coin to continue, or press start to try again.
+The meeting that could have been an email is starting in five minutes.
+Warning: low battery, please connect your charger as soon as possible.
