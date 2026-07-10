@@ -4,19 +4,35 @@
 # Lines starting with '#' and blank lines are ignored.
 # Edit this file and restart the server to change what's quizzed.
 
-A penny saved is a penny earned, but a dollar spent is a dollar remembered.
-Why did the scarecrow win an award? Because he was outstanding in his field.
-Please hold the line while we connect you to the next available agent.
-The doctor said I have a case of the Mondays and prescribed more coffee.
-An apple a day keeps the doctor away, unless you throw it hard enough.
-Your subscription will automatically renew unless canceled before the trial ends.
-I told my computer I needed a break, and now it won't stop sending me snacks.
-Actions speak louder than words, but a loud enough word can still wake the neighbors.
-This message will self-destruct in five seconds, or whenever the battery dies.
-The road to success is always under construction, much like this parking lot.
-Please ensure your tray table is in the upright and locked position before landing.
-Why don't scientists trust atoms? Because they make up everything.
-The customer is always right, except when they're clearly wrong about the return policy.
-A journey of a thousand miles begins with a single, very reluctant step.
-Error 404: motivation not found, please try again after a nap.
-Behind every great fortune lies a surprisingly boring spreadsheet.
+Necessity is the mother of invention, and deadlines are the father of panic.
+A stitch in time saves nine, but a missed deadline saves nobody any trouble.
+Please remain on the line, your call is very important to almost nobody right now.
+Why did the computer go to therapy? It had too many unresolved issues.
+The early bird catches the worm, but the night owl catches up on emails instead.
+Warning: this elevator is currently out of service, please use the stairs for your cardio.
+Your flight has been delayed due to circumstances entirely within our control, apparently.
+Knowledge is power, but Wi-Fi is basically a human right at this point.
+The best things in life are free, except for shipping and handling.
+If at first you don't succeed, redefine success and try again tomorrow.
+Curiosity killed the cat, but satisfaction eventually brought it back online.
+Please note that all sales are final, much like most of my life decisions.
+A closed mouth gathers no foot, unlike a rolling stone which gathers no moss.
+The system is currently undergoing scheduled maintenance, please check back never.
+Why did the coffee file a police report? It got mugged before breakfast.
+Practice makes perfect, but nobody has time to practice anymore these days.
+Please verify you are not a robot by proving you understand traffic lights.
+The quickest way to double your money is to fold it in half and put it back in your pocket.
+Rome wasn't built in a day, but the Wi-Fi outage sure feels like it's lasting one.
+Two wrongs don't make a right, but three lefts eventually get you back home.
+Absence makes the heart grow fonder, and also makes the inbox grow terrifying.
+All that glitters is not gold, sometimes it's just glitter, and it never comes off.
+Please stand behind the yellow line while waiting for the next available agent.
+According to the manual, this error should never occur, and yet here we are.
+A watched pot never boils, but an unwatched one definitely boils over.
+The customer service representative you are trying to reach is currently unavailable.
+Behind every successful person is a substantial amount of caffeine and deadlines.
+If you can read this message, congratulations, your screen is technically working.
+The road less traveled is usually less traveled for a very good reason.
+Your table for two is ready, but your reservation was actually for four.
+This product is not intended to diagnose, treat, cure, or explain anything at all.
+The meeting could have been an email, and the email could have been silence.

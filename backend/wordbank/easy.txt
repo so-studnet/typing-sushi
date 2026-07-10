@@ -4,33 +4,63 @@
 # Lines starting with '#' and blank lines are ignored.
 # Edit this file and restart the server to change what's quizzed.
 
-weekend
-sunflower
-teapot
-raincloud
-jellyfish
-treehouse
-snowman
-campout
-doorbell
-hairbrush
-staircase
-flashlight
-pillow fight
-book club
-coffee mug
-garden gnome
-thunderstorm
-popcorn
-road trip
-board game
-night owl
-morning jog
-tea party
-wind chime
-paper cut
-jump rope
-tree swing
-comic book
-video call
-sock drawer
+lantern
+seashore
+raindrop
+moonwalk
+birdhouse
+windmill
+sandwich
+popsicle
+kite string
+bubble bath
+star gazing
+front porch
+garden hose
+mountain peak
+desert sand
+ocean wave
+forest trail
+candy cane
+paper boat
+rubber duck
+photo album
+wall clock
+tea kettle
+spare key
+window sill
+attic dust
+broken umbrella
+lucky charm
+quiet library
+busy street
+cozy blanket
+warm soup
+cold drink
+sweet tooth
+sour candy
+spicy chili
+fresh bread
+old photograph
+new sneakers
+loud music
+soft pillow
+bright idea
+dark alley
+tall building
+short story
+long journey
+quick nap
+slow dance
+deep breath
+high five
+low tide
+wild guess
+fair trade
+free time
+small talk
+big dream
+good news
+bad luck
+hard work
+easy win
