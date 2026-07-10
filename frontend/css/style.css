@@ -233,6 +233,10 @@ body {
   margin-bottom: 16px;
   font-family: "Courier New", monospace;
   word-break: break-word;
+  /* `normal` white-space collapses (hides) a space that lands right at a
+     soft line-wrap point, which made a highlighted wrong/correct space
+     character invisible there. `pre-wrap` keeps every space's box intact. */
+  white-space: pre-wrap;
 }
 
 .word-display .char-correct {
