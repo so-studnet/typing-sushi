@@ -131,14 +131,16 @@ public final class Main {
     }
 
     /**
-     * POST /api/explain {"sentence":"..."} -- asks the Gemini API to explain the
-     * given word/sentence in English, and returns {"explanation":"..."}.
-     * Requires the GEMINI_API_KEY environment variable; the key never reaches
-     * the client. Without it, responds 503 so the frontend can show a plain
-     * "not configured" message instead of a generic error.
+     * POST /api/explain {"sentence":"..."} -- asks the Groq API (OpenAI-compatible
+     * chat completions) to explain the given word/sentence in English, and
+     * returns {"explanation":"..."}. Requires the GROQ_API_KEY environment
+     * variable; the key never reaches the client. Without it, responds 503 so
+     * the frontend can show a plain "not configured" message instead of a
+     * generic error.
      */
     static final class ExplainHandler implements HttpHandler {
-        private static final String DEFAULT_MODEL = "gemini-2.0-flash";
+        private static final String DEFAULT_MODEL = "llama-3.3-70b-versatile";
+        private static final String GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
         private static final int MAX_SENTENCE_LENGTH = 500;
         private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
@@ -151,7 +153,7 @@ public final class Main {
                 return;
             }
 
-            String apiKey = System.getenv("GEMINI_API_KEY");
+            String apiKey = System.getenv("GROQ_API_KEY");
             if (apiKey == null || apiKey.isBlank()) {
                 sendJson(ex, 503, "{\"error\":\"AI explanations are not configured on this server.\"}");
                 return;
@@ -167,33 +169,32 @@ public final class Main {
                 sentence = sentence.substring(0, MAX_SENTENCE_LENGTH);
             }
 
-            String model = System.getenv().getOrDefault("GEMINI_MODEL", DEFAULT_MODEL);
+            String model = System.getenv().getOrDefault("GROQ_MODEL", DEFAULT_MODEL);
             String prompt = "Explain the meaning of the following sentence or word in simple English, "
                 + "in at most two short sentences. Respond only in English and use no other language. "
                 + "Text: \"" + sentence + "\"";
-            String requestBody = "{\"contents\":[{\"parts\":[{\"text\":\""
-                + Json.escape(prompt) + "\"}]}]}";
-            String url = "https://generativelanguage.googleapis.com/v1beta/models/"
-                + model + ":generateContent?key=" + apiKey;
+            String requestBody = "{\"model\":\"" + Json.escape(model) + "\","
+                + "\"messages\":[{\"role\":\"user\",\"content\":\"" + Json.escape(prompt) + "\"}]}";
 
             try {
                 HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
+                    .uri(URI.create(GROQ_URL))
                     .timeout(Duration.ofSeconds(15))
                     .header("Content-Type", "application/json")
+                    .header("Authorization", "Bearer " + apiKey)
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
                     .build();
                 HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
                 if (response.statusCode() != 200) {
-                    System.err.println("Gemini API error " + response.statusCode() + ": " + response.body());
+                    System.err.println("Groq API error " + response.statusCode() + ": " + response.body());
                     sendJson(ex, 502, "{\"error\":\"Could not get an explanation right now.\"}");
                     return;
                 }
 
-                String explanation = Json.getString(response.body(), "text");
+                String explanation = Json.getString(response.body(), "content");
                 if (explanation == null || explanation.isBlank()) {
-                    System.err.println("Gemini API response had no text: " + response.body());
+                    System.err.println("Groq API response had no content: " + response.body());
                     sendJson(ex, 502, "{\"error\":\"Could not get an explanation right now.\"}");
                     return;
                 }
@@ -203,7 +204,7 @@ public final class Main {
                 Thread.currentThread().interrupt();
                 sendJson(ex, 502, "{\"error\":\"Could not get an explanation right now.\"}");
             } catch (IOException e) {
-                System.err.println("Gemini API request failed: " + e.getMessage());
+                System.err.println("Groq API request failed: " + e.getMessage());
                 sendJson(ex, 502, "{\"error\":\"Could not get an explanation right now.\"}");
             }
         }
