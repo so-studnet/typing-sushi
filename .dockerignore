@@ -1,0 +1,4 @@
+.git
+backend/out
+backend/data
+*.md

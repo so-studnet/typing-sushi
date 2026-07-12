@@ -94,6 +94,39 @@ configured on this server." instead of failing. The model defaults to
 currently available model IDs). The API key is only ever used server-side
 and is never sent to the browser.
 
+## Deploying so others can play (Render)
+
+Running the game locally means every player needs their own machine set up
+(and, for AI explanations, their own `GROQ_API_KEY`). To let other people
+play from just a URL, deploy one shared server instead -- the API key then
+lives only on that server, never on players' machines or in this repo.
+
+This repo includes a `Dockerfile` for that: it compiles the backend and
+bundles the frontend/wordbank into a container that listens on the `PORT`
+environment variable (matching how most hosts, including Render, work).
+
+[Render](https://render.com) is recommended: its free "Web Service" plan
+needs no credit card. Steps:
+
+1. Sign up at render.com (GitHub login is fine).
+2. **New +** -> **Web Service** -> connect this GitHub repository.
+3. Render should detect the `Dockerfile` automatically. If asked, set:
+   - **Environment**: Docker
+   - **Instance type**: Free
+4. Under **Environment Variables**, add `GROQ_API_KEY` with your key (and
+   optionally `GROQ_MODEL`). This is the only place the key needs to exist.
+5. Click **Create Web Service**. The first build takes a few minutes; Render
+   gives you a public URL (`https://your-app.onrender.com`) when it's done.
+6. Share that URL -- anyone can open it and play, no install required.
+
+Notes:
+- The free plan spins the service down after inactivity, so the first
+  request after a while takes a few extra seconds to wake it back up.
+- The free plan's disk isn't persistent, so `backend/data/leaderboard.json`
+  resets on restarts/redeploys.
+- Pushing to this repo's default branch will auto-redeploy if you enable
+  Render's auto-deploy option.
+
 ## API
 
 - `GET /api/words?difficulty=easy|medium|hard|notion&count=N` — random word list
@@ -119,4 +152,5 @@ backend/
   wordbank/          editable word/phrase lists (easy.txt, medium.txt, hard.txt)
 run.sh              compile + run (macOS/Linux/Git Bash)
 run.bat             compile + run (Windows cmd, uses JAVA_HOME)
+Dockerfile          container build for hosting (e.g. Render), see "Deploying" above
 ```
