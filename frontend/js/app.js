@@ -90,8 +90,40 @@
     el.beltPlates.textContent = plates.concat(plates).join(" ");
   }
 
+  // A free-tier host (e.g. Render) can be asleep and take up to ~30-60s to
+  // wake up on the first request after a while, often failing fast with a
+  // non-JSON gateway error in the meantime. Retrying a few times, spaced
+  // out, rides through that instead of failing immediately. A response
+  // that *is* JSON is treated as final (even on 4xx/5xx) since that means
+  // our own app answered, not the host's gateway -- retrying won't change it.
+  async function fetchWithRetry(url, options, { retries = 6, delayMs = 5000, onRetry } = {}) {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const res = await fetch(url, options);
+        const contentType = res.headers.get("content-type") || "";
+        if (res.ok || contentType.includes("application/json")) {
+          return res;
+        }
+        throw new Error(`Unexpected response: ${res.status}`);
+      } catch (err) {
+        if (attempt >= retries) throw err;
+        if (onRetry) onRetry(attempt + 1, retries);
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+
   async function fetchWords(difficulty) {
-    const res = await fetch(`/api/words?difficulty=${encodeURIComponent(difficulty)}&count=60`);
+    const res = await fetchWithRetry(
+      `/api/words?difficulty=${encodeURIComponent(difficulty)}&count=60`,
+      undefined,
+      {
+        onRetry: (attempt, total) => {
+          el.startError.textContent =
+            `Waking up the kitchen… retrying (${attempt}/${total})`;
+        },
+      }
+    );
     if (!res.ok) throw new Error("Failed to load words");
     return res.json();
   }
@@ -329,11 +361,20 @@
     el.explainContent.textContent = "Thinking…";
 
     try {
-      const res = await fetch("/api/explain", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sentence: currentWord() }),
-      });
+      const res = await fetchWithRetry(
+        "/api/explain",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sentence: currentWord() }),
+        },
+        {
+          onRetry: (attempt, total) => {
+            el.explainContent.textContent =
+              `Waking up the server… retrying (${attempt}/${total})`;
+          },
+        }
+      );
       const data = await res.json().catch(() => ({}));
       el.explainContent.textContent = res.ok
         ? data.explanation
