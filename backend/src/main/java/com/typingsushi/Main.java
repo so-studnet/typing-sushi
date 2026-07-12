@@ -173,7 +173,9 @@ public final class Main {
             String prompt = "Explain the meaning of the following sentence or word in simple English, "
                 + "in at most two short sentences. Then, on a new line, write \"Similar ways to say it:\" "
                 + "followed by exactly two rephrased example sentences, one per line, that express the "
-                + "same meaning using different words. Respond only in English and use no other language. "
+                + "same meaning using different words. Use short sentences and basic, everyday vocabulary "
+                + "suitable for a beginner English learner, both in the explanation and in the two examples. "
+                + "Respond only in English and use no other language. "
                 + "Text: \"" + sentence + "\"";
             String requestBody = "{\"model\":\"" + Json.escape(model) + "\","
                 + "\"messages\":[{\"role\":\"user\",\"content\":\"" + Json.escape(prompt) + "\"}]}";
