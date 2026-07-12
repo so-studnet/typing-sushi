@@ -8,10 +8,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.net.URLDecoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -39,6 +44,7 @@ public final class Main {
         server.createContext("/api/words", new WordsHandler());
         server.createContext("/api/leaderboard", new LeaderboardHandler(leaderboard));
         server.createContext("/api/score", new ScoreHandler(leaderboard));
+        server.createContext("/api/explain", new ExplainHandler());
         server.createContext("/", new StaticFileHandler(frontendDir));
 
         server.start();
@@ -121,6 +127,85 @@ public final class Main {
 
             List<Leaderboard.Entry> updated = leaderboard.submit(name, course == null ? "" : course, earned);
             sendJson(ex, 200, Leaderboard.toJson(updated));
+        }
+    }
+
+    /**
+     * POST /api/explain {"sentence":"..."} -- asks the Gemini API to explain the
+     * given word/sentence in English, and returns {"explanation":"..."}.
+     * Requires the GEMINI_API_KEY environment variable; the key never reaches
+     * the client. Without it, responds 503 so the frontend can show a plain
+     * "not configured" message instead of a generic error.
+     */
+    static final class ExplainHandler implements HttpHandler {
+        private static final String DEFAULT_MODEL = "gemini-2.0-flash";
+        private static final int MAX_SENTENCE_LENGTH = 500;
+        private final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(10))
+            .build();
+
+        @Override
+        public void handle(HttpExchange ex) throws IOException {
+            if (!"POST".equalsIgnoreCase(ex.getRequestMethod())) {
+                sendMethodNotAllowed(ex);
+                return;
+            }
+
+            String apiKey = System.getenv("GEMINI_API_KEY");
+            if (apiKey == null || apiKey.isBlank()) {
+                sendJson(ex, 503, "{\"error\":\"AI explanations are not configured on this server.\"}");
+                return;
+            }
+
+            String body = readBody(ex);
+            String sentence = Json.getString(body, "sentence");
+            if (sentence == null || sentence.isBlank()) {
+                sendJson(ex, 400, "{\"error\":\"Missing 'sentence'.\"}");
+                return;
+            }
+            if (sentence.length() > MAX_SENTENCE_LENGTH) {
+                sentence = sentence.substring(0, MAX_SENTENCE_LENGTH);
+            }
+
+            String model = System.getenv().getOrDefault("GEMINI_MODEL", DEFAULT_MODEL);
+            String prompt = "Explain the meaning of the following sentence or word in simple English, "
+                + "in at most two short sentences. Respond only in English and use no other language. "
+                + "Text: \"" + sentence + "\"";
+            String requestBody = "{\"contents\":[{\"parts\":[{\"text\":\""
+                + Json.escape(prompt) + "\"}]}]}";
+            String url = "https://generativelanguage.googleapis.com/v1beta/models/"
+                + model + ":generateContent?key=" + apiKey;
+
+            try {
+                HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .timeout(Duration.ofSeconds(15))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
+                    .build();
+                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+                if (response.statusCode() != 200) {
+                    System.err.println("Gemini API error " + response.statusCode() + ": " + response.body());
+                    sendJson(ex, 502, "{\"error\":\"Could not get an explanation right now.\"}");
+                    return;
+                }
+
+                String explanation = Json.getString(response.body(), "text");
+                if (explanation == null || explanation.isBlank()) {
+                    System.err.println("Gemini API response had no text: " + response.body());
+                    sendJson(ex, 502, "{\"error\":\"Could not get an explanation right now.\"}");
+                    return;
+                }
+
+                sendJson(ex, 200, "{\"explanation\":\"" + Json.escape(explanation.strip()) + "\"}");
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                sendJson(ex, 502, "{\"error\":\"Could not get an explanation right now.\"}");
+            } catch (IOException e) {
+                System.err.println("Gemini API request failed: " + e.getMessage());
+                sendJson(ex, 502, "{\"error\":\"Could not get an explanation right now.\"}");
+            }
         }
     }
 

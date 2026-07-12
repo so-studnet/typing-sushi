@@ -51,12 +51,33 @@ recompilation needed. If a file is ever missing or empty, the server falls
 back to a small built-in word list and logs a warning, rather than failing
 to start.
 
+## AI explanations (optional)
+
+Click "💡 Explain this" during a round to open a modal with an English
+explanation of the current word/sentence, powered by the Google Gemini API.
+The round pauses (timer stops, typing disabled) while the modal is open.
+
+This requires a free Gemini API key from
+[Google AI Studio](https://aistudio.google.com/apikey), set as an
+environment variable before starting the server:
+
+```bash
+GEMINI_API_KEY=your-key-here ./run.sh
+```
+
+Without it, the button still works but shows "AI explanations are not
+configured on this server." instead of failing. The model defaults to
+`gemini-2.0-flash`; override it with `GEMINI_MODEL` if needed. The API key
+is only ever used server-side and is never sent to the browser.
+
 ## API
 
-- `GET /api/words?difficulty=easy|medium|hard&count=N` — random word list
+- `GET /api/words?difficulty=easy|medium|hard|notion&count=N` — random word list
 - `GET /api/leaderboard` — top 10 scores
 - `POST /api/score` — `{"name": "...", "course": "...", "earned": 12.34}`,
   returns the updated top-10 leaderboard
+- `POST /api/explain` — `{"sentence": "..."}`, returns
+  `{"explanation": "..."}` (requires `GEMINI_API_KEY`, see above)
 
 ## Project layout
 

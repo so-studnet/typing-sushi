@@ -81,8 +81,18 @@
         spellcheck="false"
         placeholder="Start typing…"
       />
+      <button id="explain-btn" class="explain-btn" type="button">💡 Explain this</button>
     </div>
   </section>
+
+  <!-- AI EXPLANATION MODAL -->
+  <div id="explain-modal" class="modal-overlay" hidden>
+    <div class="modal-box">
+      <button id="explain-modal-close" class="modal-close" type="button" aria-label="Close">&times;</button>
+      <h3>💡 Meaning</h3>
+      <p id="explain-content" class="modal-content">Thinking…</p>
+    </div>
+  </div>
 
   <!-- RESULT SCREEN -->
   <section id="screen-result" class="screen">

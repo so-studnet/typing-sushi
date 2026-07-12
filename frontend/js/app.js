@@ -37,6 +37,10 @@
     retryBtn: document.getElementById("retry-btn"),
     homeBtn: document.getElementById("home-btn"),
     endlessTag: document.getElementById("endless-tag"),
+    explainBtn: document.getElementById("explain-btn"),
+    explainModal: document.getElementById("explain-modal"),
+    explainModalClose: document.getElementById("explain-modal-close"),
+    explainContent: document.getElementById("explain-content"),
   };
 
   let state = null;
@@ -308,8 +312,43 @@
       if (!window.confirm("Quit this round and return to the home screen?")) return;
       clearInterval(state.timerId);
     }
+    el.explainModal.hidden = true;
     el.typeInput.disabled = false;
     resetToStart();
+  }
+
+  async function openExplainModal() {
+    if (!state || state.finished) return;
+
+    // Pause the round while the explanation is being read.
+    clearInterval(state.timerId);
+    state.timerId = null;
+    el.typeInput.disabled = true;
+
+    el.explainModal.hidden = false;
+    el.explainContent.textContent = "Thinking…";
+
+    try {
+      const res = await fetch("/api/explain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sentence: currentWord() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      el.explainContent.textContent = res.ok
+        ? data.explanation
+        : (data.error || "Could not load an explanation right now.");
+    } catch (err) {
+      el.explainContent.textContent = "Could not load an explanation right now. Please try again.";
+    }
+  }
+
+  function closeExplainModal() {
+    el.explainModal.hidden = true;
+    if (!state || state.finished) return;
+    el.typeInput.disabled = false;
+    el.typeInput.focus();
+    state.timerId = setInterval(tick, 1000);
   }
 
   document.querySelectorAll(".duration-btn").forEach((btn) => {
@@ -326,4 +365,9 @@
   el.leaderboardForm.addEventListener("submit", submitScore);
   el.retryBtn.addEventListener("click", resetToStart);
   el.homeBtn.addEventListener("click", quitToStart);
+  el.explainBtn.addEventListener("click", openExplainModal);
+  el.explainModalClose.addEventListener("click", closeExplainModal);
+  el.explainModal.addEventListener("click", (e) => {
+    if (e.target === el.explainModal) closeExplainModal();
+  });
 })();

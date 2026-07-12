@@ -277,6 +277,79 @@ body {
   border-color: var(--red);
 }
 
+.explain-btn {
+  display: block;
+  margin: 14px auto 0;
+  cursor: pointer;
+  border: 2px solid var(--wood);
+  background: #fff7ea;
+  border-radius: 8px;
+  padding: 7px 16px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--dark);
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.explain-btn:hover {
+  background: #ffefd0;
+  transform: translateY(-1px);
+}
+
+/* AI EXPLANATION MODAL */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(43, 35, 32, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 100;
+}
+
+.modal-overlay[hidden] {
+  display: none;
+}
+
+.modal-box {
+  position: relative;
+  background: #fff;
+  border-radius: 14px;
+  padding: 28px 24px 24px;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+  animation: fade-in 0.2s ease;
+}
+
+.modal-box h3 {
+  margin: 0 0 12px;
+}
+
+.modal-content {
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.modal-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  font-size: 1.6rem;
+  line-height: 1;
+  color: var(--gray);
+  padding: 4px;
+}
+
+.modal-close:hover {
+  color: var(--red);
+}
+
 /* RESULT SCREEN */
 #screen-result {
   text-align: center;
