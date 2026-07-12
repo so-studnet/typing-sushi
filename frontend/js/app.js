@@ -35,6 +35,7 @@
     leaderboard: document.getElementById("leaderboard"),
     retryBtn: document.getElementById("retry-btn"),
     homeBtn: document.getElementById("home-btn"),
+    endlessTag: document.getElementById("endless-tag"),
   };
 
   let state = null;
@@ -105,6 +106,8 @@
       return;
     }
 
+    const endless = selectedDuration === "endless";
+
     state = {
       course: courseKey,
       target: course.target,
@@ -115,8 +118,9 @@
       earned: 0,
       totalKeystrokes: 0,
       correctKeystrokes: 0,
-      totalSeconds: selectedDuration,
-      secondsLeft: selectedDuration,
+      endless,
+      totalSeconds: endless ? null : selectedDuration,
+      secondsLeft: endless ? 0 : selectedDuration,
       startedAt: Date.now(),
       timerId: null,
       finished: false,
@@ -124,7 +128,8 @@
 
     el.targetAmount.textContent = course.target.toFixed(0);
     el.earned.textContent = "0.00";
-    el.timeLeft.textContent = String(selectedDuration);
+    el.timeLeft.textContent = endless ? "0" : String(selectedDuration);
+    el.endlessTag.hidden = !endless;
     el.typeInput.value = "";
 
     renderBelt();
@@ -165,6 +170,11 @@
   }
 
   function tick() {
+    if (state.endless) {
+      state.secondsLeft += 1;
+      el.timeLeft.textContent = String(state.secondsLeft);
+      return;
+    }
     state.secondsLeft -= 1;
     el.timeLeft.textContent = String(Math.max(0, state.secondsLeft));
     if (state.secondsLeft <= 0) {
@@ -303,7 +313,7 @@
 
   document.querySelectorAll(".duration-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
-      selectedDuration = Number(btn.dataset.duration);
+      selectedDuration = btn.dataset.duration === "endless" ? "endless" : Number(btn.dataset.duration);
       document.querySelectorAll(".duration-btn").forEach((b) => b.classList.remove("selected"));
       btn.classList.add("selected");
     });
