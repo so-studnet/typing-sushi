@@ -12,20 +12,38 @@ money to cover your chosen course price.
 
 ## Running
 
-Requires a JDK (17+ recommended) on your PATH.
+Requires a JDK (17+ recommended).
+
+**macOS/Linux, or Git Bash on Windows:**
 
 ```bash
 ./run.sh
 ```
 
-This compiles the backend and starts a server on `http://localhost:8080`,
-which serves the frontend and the JSON API from the same origin. Open that
-URL in your browser to play.
+**Windows (cmd or double-click), if the JDK isn't on your PATH:**
+
+Set `JAVA_HOME` to your JDK folder once:
+
+```cmd
+setx JAVA_HOME "C:\path\to\your\jdk"
+```
+
+Close and reopen the terminal, then run (or just double-click) `run.bat`.
+
+---
+
+Either script compiles the backend and starts a server on
+`http://localhost:8080`, which serves the frontend and the JSON API from the
+same origin. Open that URL in your browser to play.
 
 Set a different port with the `PORT` environment variable:
 
 ```bash
 PORT=3000 ./run.sh
+```
+
+```cmd
+set "PORT=3000" && run.bat
 ```
 
 ## How it works
@@ -93,5 +111,6 @@ backend/
     Leaderboard.java  in-memory + file-persisted top scores
     Json.java         tiny JSON encode/decode helpers
   wordbank/          editable word/phrase lists (easy.txt, medium.txt, hard.txt)
-run.sh              compile + run
+run.sh              compile + run (macOS/Linux/Git Bash)
+run.bat             compile + run (Windows cmd, uses JAVA_HOME)
 ```
