@@ -171,7 +171,9 @@ public final class Main {
 
             String model = System.getenv().getOrDefault("GROQ_MODEL", DEFAULT_MODEL);
             String prompt = "Explain the meaning of the following sentence or word in simple English, "
-                + "in at most two short sentences. Respond only in English and use no other language. "
+                + "in at most two short sentences. Then, on a new line, write \"Similar ways to say it:\" "
+                + "followed by exactly two rephrased example sentences, one per line, that express the "
+                + "same meaning using different words. Respond only in English and use no other language. "
                 + "Text: \"" + sentence + "\"";
             String requestBody = "{\"model\":\"" + Json.escape(model) + "\","
                 + "\"messages\":[{\"role\":\"user\",\"content\":\"" + Json.escape(prompt) + "\"}]}";
