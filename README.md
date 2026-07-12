@@ -72,21 +72,27 @@ to start.
 ## AI explanations (optional)
 
 Click "💡 Explain this" during a round to open a modal with an English
-explanation of the current word/sentence, powered by the Google Gemini API.
-The round pauses (timer stops, typing disabled) while the modal is open.
+explanation of the current word/sentence, powered by the Groq API. The round
+pauses (timer stops, typing disabled) while the modal is open.
 
-This requires a free Gemini API key from
-[Google AI Studio](https://aistudio.google.com/apikey), set as an
-environment variable before starting the server:
+This requires a free Groq API key from
+[console.groq.com](https://console.groq.com/keys) -- no credit card
+required -- set as an environment variable before starting the server:
 
 ```bash
-GEMINI_API_KEY=your-key-here ./run.sh
+GROQ_API_KEY=your-key-here ./run.sh
+```
+
+```cmd
+set "GROQ_API_KEY=your-key-here" && run.bat
 ```
 
 Without it, the button still works but shows "AI explanations are not
 configured on this server." instead of failing. The model defaults to
-`gemini-2.0-flash`; override it with `GEMINI_MODEL` if needed. The API key
-is only ever used server-side and is never sent to the browser.
+`llama-3.3-70b-versatile`; override it with `GROQ_MODEL` if needed (see
+[console.groq.com/docs/models](https://console.groq.com/docs/models) for
+currently available model IDs). The API key is only ever used server-side
+and is never sent to the browser.
 
 ## API
 
@@ -95,7 +101,7 @@ is only ever used server-side and is never sent to the browser.
 - `POST /api/score` — `{"name": "...", "course": "...", "earned": 12.34}`,
   returns the updated top-10 leaderboard
 - `POST /api/explain` — `{"sentence": "..."}`, returns
-  `{"explanation": "..."}` (requires `GEMINI_API_KEY`, see above)
+  `{"explanation": "..."}` (requires `GROQ_API_KEY`, see above)
 
 ## Project layout
 
