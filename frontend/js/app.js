@@ -5,6 +5,7 @@
     beginner: { label: "Beginner", target: 10, difficulty: "easy", rate: 0.05 },
     standard: { label: "Standard", target: 30, difficulty: "medium", rate: 0.05 },
     pro: { label: "Pro", target: 50, difficulty: "hard", rate: 0.05 },
+    notion: { label: "Notion", target: 40, difficulty: "notion", rate: 0.05 },
   };
   const DEFAULT_DURATION = 60;
   const SUSHI_EMOJI = ["🍣", "🍙", "🍱", "🍤", "🐟", "🍚"];
