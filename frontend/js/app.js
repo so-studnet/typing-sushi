@@ -96,7 +96,7 @@
   // out, rides through that instead of failing immediately. A response
   // that *is* JSON is treated as final (even on 4xx/5xx) since that means
   // our own app answered, not the host's gateway -- retrying won't change it.
-  async function fetchWithRetry(url, options, { retries = 6, delayMs = 5000, onRetry } = {}) {
+  async function fetchWithRetry(url, options, { retries = 6, delayMs = 2000, onRetry } = {}) {
     for (let attempt = 0; ; attempt++) {
       try {
         const res = await fetch(url, options);
