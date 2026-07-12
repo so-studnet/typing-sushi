@@ -27,6 +27,7 @@
         <button class="duration-btn selected" data-duration="60">1 min</button>
         <button class="duration-btn" data-duration="120">2 min</button>
         <button class="duration-btn" data-duration="180">3 min</button>
+        <button class="duration-btn" data-duration="endless">♾️ Endless</button>
       </div>
     </div>
     <div class="course-select">
@@ -53,7 +54,7 @@
   <section id="screen-game" class="screen">
     <div class="hud">
       <button id="home-btn" class="home-btn" title="Quit to home screen">🏠 Home</button>
-      <div class="hud-item">⏱ <span id="time-left">60</span>s</div>
+      <div class="hud-item">⏱ <span id="time-left">60</span>s<span id="endless-tag" class="endless-tag" hidden> ♾️ endless</span></div>
       <div class="hud-item">💰 $<span id="earned">0.00</span></div>
       <div class="hud-item">🎯 Target $<span id="target-amount">10</span></div>
     </div>

@@ -183,6 +183,12 @@ body {
   transition: background 0.15s ease;
 }
 
+.endless-tag {
+  color: var(--red);
+  font-size: 0.85rem;
+  margin-left: 4px;
+}
+
 .home-btn:hover {
   background: #fff7ea;
 }
