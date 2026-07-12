@@ -27,7 +27,8 @@ final class WordBank {
     private static final Map<String, List<String>> FALLBACK = Map.of(
         "easy.txt", List.of("sushi", "wasabi", "green tea"),
         "medium.txt", List.of("Practice makes perfect.", "Better late than never."),
-        "hard.txt", List.of("Please restart your computer and try logging in again.")
+        "hard.txt", List.of("Please restart your computer and try logging in again."),
+        "notion.txt", List.of("Practice makes perfect.")
     );
 
     private static final Map<String, List<String>> POOLS = loadAllPools();
@@ -56,6 +57,7 @@ final class WordBank {
         pools.put("easy", loadPool(dir, "easy.txt"));
         pools.put("medium", loadPool(dir, "medium.txt"));
         pools.put("hard", loadPool(dir, "hard.txt"));
+        pools.put("notion", loadPool(dir, "notion.txt"));
         return pools;
     }
 
