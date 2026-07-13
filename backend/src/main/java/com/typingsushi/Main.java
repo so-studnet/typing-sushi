@@ -36,7 +36,8 @@ public final class Main {
     public static void main(String[] args) throws IOException {
         int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
         Path frontendDir = resolveFrontendDir();
-        Leaderboard leaderboard = new Leaderboard(Path.of("data", "leaderboard.json"));
+        FirebaseStore firebase = FirebaseStore.fromEnv();
+        Leaderboard leaderboard = new Leaderboard(Path.of("data", "leaderboard.json"), firebase);
 
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
         server.setExecutor(Executors.newFixedThreadPool(8));
@@ -50,6 +51,9 @@ public final class Main {
         server.start();
         System.out.println("Sushi Typing server running at http://localhost:" + port);
         System.out.println("Serving frontend from: " + frontendDir.toAbsolutePath());
+        System.out.println(firebase != null
+            ? "Leaderboard persistence: Firebase Realtime Database"
+            : "Leaderboard persistence: local file (data/leaderboard.json)");
     }
 
     private static Path resolveFrontendDir() {

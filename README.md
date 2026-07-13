@@ -53,8 +53,10 @@ set "PORT=3000" && run.bat
    character earns you $0.05.
 3. You have 60 seconds. If your total earnings reach the course price, the
    meal's on the house!
-4. Save your score to the leaderboard, which persists across restarts in
-   `backend/data/leaderboard.json`.
+4. Save your score to the leaderboard. Locally it persists in
+   `backend/data/leaderboard.json`; on a host without a persistent disk it
+   can persist in a Firebase Realtime Database instead (see
+   "Persistent leaderboard" below).
 
 ## Editing the word list
 
@@ -122,10 +124,54 @@ needs no credit card. Steps:
 Notes:
 - The free plan spins the service down after inactivity, so the first
   request after a while takes a few extra seconds to wake it back up.
-- The free plan's disk isn't persistent, so `backend/data/leaderboard.json`
-  resets on restarts/redeploys.
+- The free plan's disk isn't persistent, so the local
+  `backend/data/leaderboard.json` resets on restarts/redeploys. Configure
+  the Firebase-backed leaderboard (next section) to keep scores.
 - Pushing to this repo's default branch will auto-redeploy if you enable
   Render's auto-deploy option.
+
+## Persistent leaderboard (optional, Firebase)
+
+Render's free plan wipes the container filesystem on every restart, so the
+file-backed leaderboard resets whenever the service spins down. To keep
+scores across restarts, the server can store the leaderboard in a
+[Firebase Realtime Database](https://firebase.google.com/) instead — its
+free "Spark" plan needs no credit card, and the server talks to it over
+plain REST (no SDK, keeping this project dependency-free).
+
+Setup:
+
+1. At [console.firebase.google.com](https://console.firebase.google.com),
+   create a project, then create a **Realtime Database**
+   (Database と Storage -> Realtime Database).
+2. Note the database URL shown at the top of the Data tab, e.g.
+   `https://your-project-default-rtdb.asia-southeast1.firebasedatabase.app`.
+3. In the database's **Rules** tab, deny direct public access — the server
+   authenticates as an admin, so it is unaffected by these rules:
+
+   ```json
+   {
+     "rules": {
+       ".read": false,
+       ".write": false
+     }
+   }
+   ```
+
+4. In **Project settings -> Service accounts**, click **Generate new
+   private key** to download the service account key JSON.
+5. Set two environment variables on the server (on Render: the service's
+   **Environment** tab):
+   - `FIREBASE_DB_URL` — the database URL from step 2
+   - `FIREBASE_SERVICE_ACCOUNT` — the entire key-file JSON from step 4,
+     pasted as the value (it fits on one line)
+
+When both variables are set, the server logs
+`Leaderboard persistence: Firebase Realtime Database` at startup and reads/
+writes the top-10 list at `/leaderboard` in the database. When they are not
+set (e.g. local development), it falls back to
+`backend/data/leaderboard.json` exactly as before. The service account key
+is only ever used server-side; never commit it to the repo.
 
 ## API
 
@@ -147,7 +193,8 @@ backend/
   src/main/java/com/typingsushi/
     Main.java        HTTP server, routing, static file serving
     WordBank.java     loads word lists (below) by difficulty
-    Leaderboard.java  in-memory + file-persisted top scores
+    Leaderboard.java  in-memory top scores, persisted to file or Firebase
+    FirebaseStore.java Firebase Realtime Database REST client (optional persistence)
     Json.java         tiny JSON encode/decode helpers
   wordbank/          editable word/phrase lists (easy.txt, medium.txt, hard.txt)
 run.sh              compile + run (macOS/Linux/Git Bash)

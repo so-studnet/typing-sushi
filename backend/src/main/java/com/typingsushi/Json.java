@@ -39,9 +39,13 @@ final class Json {
         return sb.append(']').toString();
     }
 
-    /** Extracts a string field value from a flat JSON object, e.g. "name":"Bob". */
+    /**
+     * Extracts a string field value from a flat JSON object, e.g. "name":"Bob".
+     * The value pattern is written "unrolled" ([^..]* first, then one loop per
+     * escape) so long values don't overflow the regex engine's stack.
+     */
     static String getString(String json, String key) {
-        Matcher m = Pattern.compile("\"" + Pattern.quote(key) + "\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"").matcher(json);
+        Matcher m = Pattern.compile("\"" + Pattern.quote(key) + "\"\\s*:\\s*\"([^\"\\\\]*(?:\\\\.[^\"\\\\]*)*)\"").matcher(json);
         if (!m.find()) return null;
         return m.group(1)
             .replace("\\\"", "\"")
