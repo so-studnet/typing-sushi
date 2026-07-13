@@ -16,6 +16,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +47,8 @@ public final class Main {
         server.createContext("/api/leaderboard", new LeaderboardHandler(leaderboard));
         server.createContext("/api/score", new ScoreHandler(leaderboard));
         server.createContext("/api/explain", new ExplainHandler());
+        server.createContext("/api/admin/words", new AdminWordsHandler());
+        server.createContext("/api/admin/leaderboard", new AdminLeaderboardHandler(leaderboard));
         server.createContext("/", new StaticFileHandler(frontendDir));
 
         server.start();
@@ -215,6 +218,100 @@ public final class Main {
                 System.err.println("Groq API request failed: " + e.getMessage());
                 sendJson(ex, 502, "{\"error\":\"Could not get an explanation right now.\"}");
             }
+        }
+    }
+
+    /**
+     * Gate for the admin API (see /admin.html). Requires the ADMIN_PASSWORD
+     * environment variable to be set on the server and the same value sent by
+     * the client in the X-Admin-Password header on every request. When it
+     * does not pass, an error response has already been sent.
+     */
+    private static boolean requireAdmin(HttpExchange ex) throws IOException {
+        String configured = System.getenv("ADMIN_PASSWORD");
+        if (configured == null || configured.isBlank()) {
+            sendJson(ex, 503, "{\"error\":\"Admin access is not configured on this server.\"}");
+            return false;
+        }
+        String given = ex.getRequestHeaders().getFirst("X-Admin-Password");
+        // Constant-time comparison, so response timing leaks nothing about the password.
+        if (given == null || !MessageDigest.isEqual(
+                configured.getBytes(StandardCharsets.UTF_8), given.getBytes(StandardCharsets.UTF_8))) {
+            sendJson(ex, 401, "{\"error\":\"Wrong password.\"}");
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Admin API for editing the word pools at runtime (in-memory only; a
+     * restart reloads the .txt files):
+     *   GET    /api/admin/words?difficulty=easy            -> current word list
+     *   POST   /api/admin/words {"difficulty":..,"word":..} -> add, returns updated list
+     *   DELETE /api/admin/words?difficulty=easy&word=...    -> remove, returns updated list
+     */
+    static final class AdminWordsHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange ex) throws IOException {
+            if (!requireAdmin(ex)) return;
+            switch (ex.getRequestMethod().toUpperCase()) {
+                case "GET" -> list(ex);
+                case "POST" -> add(ex);
+                case "DELETE" -> remove(ex);
+                default -> sendMethodNotAllowed(ex);
+            }
+        }
+
+        private void list(HttpExchange ex) throws IOException {
+            String difficulty = parseQuery(ex.getRequestURI().getRawQuery()).get("difficulty");
+            List<String> words = WordBank.listAll(difficulty);
+            if (words == null) {
+                sendJson(ex, 404, "{\"error\":\"Unknown difficulty.\"}");
+                return;
+            }
+            sendJson(ex, 200, Json.stringArray(words));
+        }
+
+        private void add(HttpExchange ex) throws IOException {
+            String body = readBody(ex);
+            String difficulty = Json.getString(body, "difficulty");
+            String word = Json.getString(body, "word");
+            String error = WordBank.add(difficulty, word);
+            if (error != null) {
+                sendJson(ex, 400, "{\"error\":\"" + Json.escape(error) + "\"}");
+                return;
+            }
+            sendJson(ex, 200, Json.stringArray(WordBank.listAll(difficulty)));
+        }
+
+        private void remove(HttpExchange ex) throws IOException {
+            Map<String, String> query = parseQuery(ex.getRequestURI().getRawQuery());
+            String difficulty = query.get("difficulty");
+            String error = WordBank.remove(difficulty, query.get("word"));
+            if (error != null) {
+                sendJson(ex, 400, "{\"error\":\"" + Json.escape(error) + "\"}");
+                return;
+            }
+            sendJson(ex, 200, Json.stringArray(WordBank.listAll(difficulty)));
+        }
+    }
+
+    /** GET /api/admin/leaderboard -- top scores including each entry's recording time. */
+    static final class AdminLeaderboardHandler implements HttpHandler {
+        private final Leaderboard leaderboard;
+
+        AdminLeaderboardHandler(Leaderboard leaderboard) {
+            this.leaderboard = leaderboard;
+        }
+
+        @Override
+        public void handle(HttpExchange ex) throws IOException {
+            if (!requireAdmin(ex)) return;
+            if (!"GET".equalsIgnoreCase(ex.getRequestMethod())) {
+                sendMethodNotAllowed(ex);
+                return;
+            }
+            sendJson(ex, 200, Leaderboard.toDetailedJson(leaderboard.top()));
         }
     }
 

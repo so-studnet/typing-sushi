@@ -19,6 +19,11 @@ import java.util.Map;
  * edited and maintained -- add, remove, or rebalance entries -- by editing
  * those .txt files and restarting the server, with no Java changes or
  * recompilation required.
+ *
+ * The pools can also be edited at runtime through the admin API (see
+ * Main.AdminWordsHandler). Those edits are deliberately in-memory only:
+ * they apply to the running server immediately but are gone after a
+ * restart, when the pools reload from the .txt files.
  */
 final class WordBank {
 
@@ -37,18 +42,54 @@ final class WordBank {
     }
 
     static List<String> get(String difficulty, int count) {
-        List<String> pool = POOLS.getOrDefault(
-            difficulty == null ? "" : difficulty.toLowerCase(),
-            POOLS.get("medium")
-        );
+        List<String> shuffled;
+        synchronized (POOLS) {
+            shuffled = new ArrayList<>(POOLS.getOrDefault(normalize(difficulty), POOLS.get("medium")));
+        }
 
         List<String> result = new ArrayList<>();
-        List<String> shuffled = new ArrayList<>(pool);
         while (result.size() < count) {
             Collections.shuffle(shuffled);
             result.addAll(shuffled);
         }
         return result.subList(0, count);
+    }
+
+    /** The current pool for a difficulty, in file order, or null if unknown. */
+    static List<String> listAll(String difficulty) {
+        synchronized (POOLS) {
+            List<String> pool = POOLS.get(normalize(difficulty));
+            return pool == null ? null : List.copyOf(pool);
+        }
+    }
+
+    /** Adds a word to a pool at runtime. Returns an error message, or null on success. */
+    static String add(String difficulty, String word) {
+        if (word == null || word.strip().isEmpty()) return "Word must not be empty.";
+        word = word.strip();
+        synchronized (POOLS) {
+            List<String> pool = POOLS.get(normalize(difficulty));
+            if (pool == null) return "Unknown difficulty.";
+            if (pool.contains(word)) return "That word is already in this list.";
+            pool.add(word);
+            return null;
+        }
+    }
+
+    /** Removes a word from a pool at runtime. Returns an error message, or null on success. */
+    static String remove(String difficulty, String word) {
+        if (word == null) return "Word must not be empty.";
+        synchronized (POOLS) {
+            List<String> pool = POOLS.get(normalize(difficulty));
+            if (pool == null) return "Unknown difficulty.";
+            if (pool.size() <= 1) return "Cannot remove the last word in a list.";
+            if (!pool.remove(word)) return "That word is not in this list.";
+            return null;
+        }
+    }
+
+    private static String normalize(String difficulty) {
+        return difficulty == null ? "" : difficulty.strip().toLowerCase();
     }
 
     private static Map<String, List<String>> loadAllPools() {
@@ -85,6 +126,7 @@ final class WordBank {
             System.err.println("Word bank file " + file + " is empty or missing; using fallback words.");
             lines.addAll(FALLBACK.getOrDefault(filename, List.of("sushi")));
         }
-        return List.copyOf(lines);
+        // Mutable on purpose: the admin API edits these pools at runtime.
+        return lines;
     }
 }
