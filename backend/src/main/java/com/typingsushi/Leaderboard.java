@@ -11,17 +11,24 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** Thread-safe, file-backed top-scores list for the typing game. */
+/**
+ * Thread-safe top-scores list for the typing game. Persists to a Firebase
+ * Realtime Database when one is configured (see {@link FirebaseStore}), and
+ * to a local JSON file otherwise -- so local development needs no setup,
+ * while hosts without a persistent disk keep scores across restarts.
+ */
 final class Leaderboard {
 
     static final int MAX_ENTRIES = 10;
     private static final Pattern ENTRY_PATTERN = Pattern.compile("\\{[^{}]*}");
 
     private final Path storageFile;
+    private final FirebaseStore firebase;
     private final List<Entry> entries = new ArrayList<>();
 
-    Leaderboard(Path storageFile) {
+    Leaderboard(Path storageFile, FirebaseStore firebase) {
         this.storageFile = storageFile;
+        this.firebase = firebase;
         load();
     }
 
@@ -54,25 +61,38 @@ final class Leaderboard {
     }
 
     private void load() {
-        try {
-            if (!Files.exists(storageFile)) return;
-            String content = Files.readString(storageFile, StandardCharsets.UTF_8);
-            Matcher m = ENTRY_PATTERN.matcher(content);
-            while (m.find()) {
-                String obj = m.group();
-                String name = Json.getString(obj, "name");
-                String course = Json.getString(obj, "course");
-                Double earned = Json.getNumber(obj, "earned");
-                String recordedAt = Json.getString(obj, "recordedAt");
-                if (name != null && earned != null) {
-                    entries.add(new Entry(name, course == null ? "" : course, earned,
-                        recordedAt == null ? "" : recordedAt));
-                }
+        String content;
+        if (firebase != null) {
+            try {
+                content = firebase.load();
+            } catch (Exception e) {
+                System.err.println("Could not load leaderboard from Firebase: " + e.getMessage());
+                return;
             }
-            entries.sort(Comparator.comparingDouble((Entry e) -> e.earned).reversed());
-        } catch (IOException e) {
-            System.err.println("Could not load leaderboard: " + e.getMessage());
+        } else {
+            try {
+                if (!Files.exists(storageFile)) return;
+                content = Files.readString(storageFile, StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                System.err.println("Could not load leaderboard: " + e.getMessage());
+                return;
+            }
         }
+        if (content == null) return;
+
+        Matcher m = ENTRY_PATTERN.matcher(content);
+        while (m.find()) {
+            String obj = m.group();
+            String name = Json.getString(obj, "name");
+            String course = Json.getString(obj, "course");
+            Double earned = Json.getNumber(obj, "earned");
+            String recordedAt = Json.getString(obj, "recordedAt");
+            if (name != null && earned != null) {
+                entries.add(new Entry(name, course == null ? "" : course, earned,
+                    recordedAt == null ? "" : recordedAt));
+            }
+        }
+        entries.sort(Comparator.comparingDouble((Entry e) -> e.earned).reversed());
     }
 
     private void save() {
@@ -88,10 +108,20 @@ final class Leaderboard {
             sb.append('\n');
         }
         sb.append(']');
+        String json = sb.toString();
+
+        if (firebase != null) {
+            try {
+                firebase.save(json);
+            } catch (Exception e) {
+                System.err.println("Could not save leaderboard to Firebase: " + e.getMessage());
+            }
+            return;
+        }
         try {
             Path parent = storageFile.toAbsolutePath().getParent();
             if (parent != null) Files.createDirectories(parent);
-            Files.writeString(storageFile, sb.toString(), StandardCharsets.UTF_8);
+            Files.writeString(storageFile, json, StandardCharsets.UTF_8);
         } catch (IOException e) {
             System.err.println("Could not save leaderboard: " + e.getMessage());
         }
