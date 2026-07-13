@@ -107,6 +107,10 @@ manage the running server from the browser:
   For permanent changes, edit those files instead.
 - **Leaderboard**: view the stored top scores, including when each one was
   recorded.
+- **Access log**: view recent visits to the game's top page (up to 200,
+  newest first) with time, IP address, and browser. Stored the same way as
+  the leaderboard (Firebase when configured, local file otherwise), so it
+  survives restarts.
 
 Access requires the `ADMIN_PASSWORD` environment variable to be set on the
 server (on Render: the service's **Environment** tab); the page asks for
@@ -188,10 +192,11 @@ Setup:
 
 When both variables are set, the server logs
 `Leaderboard persistence: Firebase Realtime Database` at startup and reads/
-writes the top-10 list at `/leaderboard` in the database. When they are not
-set (e.g. local development), it falls back to
-`backend/data/leaderboard.json` exactly as before. The service account key
-is only ever used server-side; never commit it to the repo.
+writes the top-10 list at `/leaderboard` in the database (the admin page's
+access log is stored at `/accessLog` the same way). When they are not set
+(e.g. local development), both fall back to local files under
+`backend/data/` exactly as before. The service account key is only ever
+used server-side; never commit it to the repo.
 
 ## API
 
@@ -211,6 +216,7 @@ Admin endpoints (all require the `X-Admin-Password` header matching the
 - `DELETE /api/admin/words?difficulty=easy&word=...` — removes a word at
   runtime, returns the updated list
 - `GET /api/admin/leaderboard` — top scores including `recordedAt`
+- `GET /api/admin/accesslog` — recent top-page visits (time, IP, browser)
 
 ## Project layout
 
@@ -226,6 +232,7 @@ backend/
     Main.java        HTTP server, routing, static file serving
     WordBank.java     loads word lists (below) by difficulty
     Leaderboard.java  in-memory top scores, persisted to file or Firebase
+    AccessLog.java    recent top-page visits, persisted to file or Firebase
     FirebaseStore.java Firebase Realtime Database REST client (optional persistence)
     Json.java         tiny JSON encode/decode helpers
   wordbank/          editable word/phrase lists (easy.txt, medium.txt, hard.txt)

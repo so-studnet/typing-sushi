@@ -39,6 +39,7 @@ public final class Main {
         Path frontendDir = resolveFrontendDir();
         FirebaseStore firebase = FirebaseStore.fromEnv();
         Leaderboard leaderboard = new Leaderboard(Path.of("data", "leaderboard.json"), firebase);
+        AccessLog accessLog = new AccessLog(Path.of("data", "accesslog.json"), firebase);
 
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
         server.setExecutor(Executors.newFixedThreadPool(8));
@@ -49,7 +50,8 @@ public final class Main {
         server.createContext("/api/explain", new ExplainHandler());
         server.createContext("/api/admin/words", new AdminWordsHandler());
         server.createContext("/api/admin/leaderboard", new AdminLeaderboardHandler(leaderboard));
-        server.createContext("/", new StaticFileHandler(frontendDir));
+        server.createContext("/api/admin/accesslog", new AdminAccessLogHandler(accessLog));
+        server.createContext("/", new StaticFileHandler(frontendDir, accessLog));
 
         server.start();
         System.out.println("Sushi Typing server running at http://localhost:" + port);
@@ -296,6 +298,25 @@ public final class Main {
         }
     }
 
+    /** GET /api/admin/accesslog -- recent top-page visits (time, IP, browser), newest first. */
+    static final class AdminAccessLogHandler implements HttpHandler {
+        private final AccessLog accessLog;
+
+        AdminAccessLogHandler(AccessLog accessLog) {
+            this.accessLog = accessLog;
+        }
+
+        @Override
+        public void handle(HttpExchange ex) throws IOException {
+            if (!requireAdmin(ex)) return;
+            if (!"GET".equalsIgnoreCase(ex.getRequestMethod())) {
+                sendMethodNotAllowed(ex);
+                return;
+            }
+            sendJson(ex, 200, AccessLog.toJson(accessLog.snapshot()));
+        }
+    }
+
     /** GET /api/admin/leaderboard -- top scores including each entry's recording time. */
     static final class AdminLeaderboardHandler implements HttpHandler {
         private final Leaderboard leaderboard;
@@ -318,9 +339,11 @@ public final class Main {
     /** Serves static files from the frontend directory, guarding against path traversal. */
     static final class StaticFileHandler implements HttpHandler {
         private final Path root;
+        private final AccessLog accessLog;
 
-        StaticFileHandler(Path root) {
+        StaticFileHandler(Path root, AccessLog accessLog) {
             this.root = root.normalize();
+            this.accessLog = accessLog;
         }
 
         @Override
@@ -331,6 +354,12 @@ public final class Main {
             }
             String rawPath = URLDecoder.decode(ex.getRequestURI().getPath(), StandardCharsets.UTF_8);
             String relative = rawPath.equals("/") ? "index.html" : rawPath.substring(1);
+
+            // Log game visits (top page only, so assets and the admin page
+            // don't flood the log with noise).
+            if (relative.equals("index.html")) {
+                accessLog.record(clientIp(ex), ex.getRequestHeaders().getFirst("User-Agent"));
+            }
 
             Path resolved = root.resolve(relative).normalize();
             if (!resolved.startsWith(root) || !Files.isRegularFile(resolved)) {
@@ -356,6 +385,19 @@ public final class Main {
         private String extensionOf(String filename) {
             int dot = filename.lastIndexOf('.');
             return dot < 0 ? "" : filename.substring(dot + 1).toLowerCase();
+        }
+
+        /**
+         * The visitor's IP. Behind a reverse proxy (as on Render) the socket
+         * peer is the proxy, so prefer the first X-Forwarded-For hop.
+         */
+        private static String clientIp(HttpExchange ex) {
+            String forwarded = ex.getRequestHeaders().getFirst("X-Forwarded-For");
+            if (forwarded != null && !forwarded.isBlank()) {
+                int comma = forwarded.indexOf(',');
+                return (comma < 0 ? forwarded : forwarded.substring(0, comma)).strip();
+            }
+            return ex.getRemoteAddress().getAddress().getHostAddress();
         }
     }
 
