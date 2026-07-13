@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex" />
+<title>Sushi Typing &mdash; Admin</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div id="app">
+
+  <header class="app-header">
+    <h1>🔧 Sushi Typing Admin</h1>
+    <p class="tagline"><a href="/">&larr; Back to the game</a></p>
+  </header>
+
+  <!-- LOGIN SCREEN -->
+  <section id="screen-login" class="screen active">
+    <form id="login-form" class="admin-login">
+      <input
+        type="password"
+        id="admin-password"
+        placeholder="Admin password"
+        autocomplete="current-password"
+        required
+      />
+      <button type="submit">Log in</button>
+    </form>
+    <p id="login-error" class="error-msg"></p>
+  </section>
+
+  <!-- ADMIN SCREEN -->
+  <section id="screen-admin" class="screen">
+
+    <div class="admin-panel">
+      <h3>📝 Word lists</h3>
+      <p class="admin-note">
+        Changes here apply to the running server immediately, but are
+        in-memory only &mdash; a restart or redeploy reloads the original
+        lists from <code>backend/wordbank/*.txt</code>.
+      </p>
+      <div class="duration-options admin-tabs" id="difficulty-tabs">
+        <button class="duration-btn selected" data-difficulty="easy">Beginner</button>
+        <button class="duration-btn" data-difficulty="medium">Standard</button>
+        <button class="duration-btn" data-difficulty="hard">Pro</button>
+        <button class="duration-btn" data-difficulty="notion">Notion</button>
+      </div>
+      <form id="add-word-form" class="admin-add">
+        <input type="text" id="new-word" placeholder="New word or phrase" required />
+        <button type="submit">Add</button>
+      </form>
+      <p class="admin-count"><span id="word-count">0</span> entries</p>
+      <ul id="word-list" class="word-list"></ul>
+    </div>
+
+    <div class="admin-panel">
+      <h3>🏆 Leaderboard <button id="lb-refresh" class="admin-refresh" type="button">↻ Refresh</button></h3>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr><th>#</th><th>Name</th><th>Course</th><th>Earned</th><th>Recorded at</th></tr>
+          </thead>
+          <tbody id="lb-body"></tbody>
+        </table>
+      </div>
+      <p id="lb-empty" class="admin-note" hidden>No scores yet.</p>
+    </div>
+
+    <p id="admin-error" class="error-msg"></p>
+    <p class="admin-logout-row">
+      <button id="logout-btn" class="home-btn" type="button">Log out</button>
+    </p>
+  </section>
+
+</div>
+<script src="js/admin.js"></script>
+</body>
+</html>

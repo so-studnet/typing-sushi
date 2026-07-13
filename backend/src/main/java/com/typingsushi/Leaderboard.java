@@ -139,4 +139,19 @@ final class Leaderboard {
         }
         return sb.append(']').toString();
     }
+
+    /** Like {@link #toJson}, but includes each entry's recording time (admin view). */
+    static String toDetailedJson(List<Entry> list) {
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < list.size(); i++) {
+            Entry e = list.get(i);
+            if (i > 0) sb.append(',');
+            sb.append("{\"name\":\"").append(Json.escape(e.name))
+              .append("\",\"course\":\"").append(Json.escape(e.course))
+              .append("\",\"earned\":").append(e.earned)
+              .append(",\"recordedAt\":\"").append(Json.escape(e.recordedAt))
+              .append("\"}");
+        }
+        return sb.append(']').toString();
+    }
 }

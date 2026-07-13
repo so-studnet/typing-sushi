@@ -96,6 +96,25 @@ configured on this server." instead of failing. The model defaults to
 currently available model IDs). The API key is only ever used server-side
 and is never sent to the browser.
 
+## Admin page (optional)
+
+Open `/admin.html` (e.g. `https://your-app.onrender.com/admin.html`) to
+manage the running server from the browser:
+
+- **Word lists**: view, add, and remove words per course at runtime. These
+  edits apply to the live server immediately but are in-memory only — a
+  restart or redeploy reloads the original `backend/wordbank/*.txt` files.
+  For permanent changes, edit those files instead.
+- **Leaderboard**: view the stored top scores, including when each one was
+  recorded.
+
+Access requires the `ADMIN_PASSWORD` environment variable to be set on the
+server (on Render: the service's **Environment** tab); the page asks for
+that password and sends it with every admin request. Without the variable,
+the admin API responds "not configured" and the page is effectively
+disabled. The password is compared in constant time and never stored in
+the repo.
+
 ## Deploying so others can play (Render)
 
 Running the game locally means every player needs their own machine set up
@@ -116,7 +135,8 @@ needs no credit card. Steps:
    - **Environment**: Docker
    - **Instance type**: Free
 4. Under **Environment Variables**, add `GROQ_API_KEY` with your key (and
-   optionally `GROQ_MODEL`). This is the only place the key needs to exist.
+   optionally `GROQ_MODEL` and `ADMIN_PASSWORD`, see "Admin page" above).
+   This is the only place the keys need to exist.
 5. Click **Create Web Service**. The first build takes a few minutes; Render
    gives you a public URL (`https://your-app.onrender.com`) when it's done.
 6. Share that URL -- anyone can open it and play, no install required.
@@ -182,13 +202,25 @@ is only ever used server-side; never commit it to the repo.
 - `POST /api/explain` — `{"sentence": "..."}`, returns
   `{"explanation": "..."}` (requires `GROQ_API_KEY`, see above)
 
+Admin endpoints (all require the `X-Admin-Password` header matching the
+`ADMIN_PASSWORD` environment variable, see "Admin page" above):
+
+- `GET /api/admin/words?difficulty=easy` — full word list for a difficulty
+- `POST /api/admin/words` — `{"difficulty": "...", "word": "..."}`, adds a
+  word at runtime, returns the updated list
+- `DELETE /api/admin/words?difficulty=easy&word=...` — removes a word at
+  runtime, returns the updated list
+- `GET /api/admin/leaderboard` — top scores including `recordedAt`
+
 ## Project layout
 
 ```
 frontend/          static game client
   index.html
+  admin.html       admin page (word lists + leaderboard, needs ADMIN_PASSWORD)
   css/style.css
   js/app.js
+  js/admin.js
 backend/
   src/main/java/com/typingsushi/
     Main.java        HTTP server, routing, static file serving
