@@ -67,6 +67,24 @@
       <p id="lb-empty" class="admin-note" hidden>No scores yet.</p>
     </div>
 
+    <div class="admin-panel">
+      <h3>👥 Access log <button id="al-refresh" class="admin-refresh" type="button">↻ Refresh</button></h3>
+      <p class="admin-note">
+        Most recent visits to the game's top page (up to 200), newest first.
+        Stored alongside the leaderboard, so it survives restarts.
+      </p>
+      <p class="admin-count"><span id="al-count">0</span> entries</p>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr><th>Time</th><th>IP</th><th>Browser</th></tr>
+          </thead>
+          <tbody id="al-body"></tbody>
+        </table>
+      </div>
+      <p id="al-empty" class="admin-note" hidden>No visits recorded yet.</p>
+    </div>
+
     <p id="admin-error" class="error-msg"></p>
     <p class="admin-logout-row">
       <button id="logout-btn" class="home-btn" type="button">Log out</button>

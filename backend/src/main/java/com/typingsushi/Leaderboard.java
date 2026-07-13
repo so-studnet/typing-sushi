@@ -64,7 +64,7 @@ final class Leaderboard {
         String content;
         if (firebase != null) {
             try {
-                content = firebase.load();
+                content = firebase.load("leaderboard");
             } catch (Exception e) {
                 System.err.println("Could not load leaderboard from Firebase: " + e.getMessage());
                 return;
@@ -112,7 +112,7 @@ final class Leaderboard {
 
         if (firebase != null) {
             try {
-                firebase.save(json);
+                firebase.save("leaderboard", json);
             } catch (Exception e) {
                 System.err.println("Could not save leaderboard to Firebase: " + e.getMessage());
             }

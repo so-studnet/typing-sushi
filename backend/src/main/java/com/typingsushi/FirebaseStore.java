@@ -15,9 +15,10 @@ import java.time.Duration;
 import java.util.Base64;
 
 /**
- * Persists the leaderboard JSON in a Firebase Realtime Database via its REST
- * API, so scores survive restarts on hosts without a persistent disk (e.g.
- * Render's free plan, whose filesystem is wiped on every restart).
+ * Persists app data (leaderboard, access log) as JSON nodes in a Firebase
+ * Realtime Database via its REST API, so the data survives restarts on hosts
+ * without a persistent disk (e.g. Render's free plan, whose filesystem is
+ * wiped on every restart).
  *
  * Authenticates as the Firebase service account by signing a JWT with the
  * account's private key and exchanging it for a Google OAuth2 access token --
@@ -35,7 +36,7 @@ final class FirebaseStore {
         + " https://www.googleapis.com/auth/userinfo.email";
     private static final Duration TIMEOUT = Duration.ofSeconds(15);
 
-    private final String dataUrl;
+    private final String dbUrl;
     private final String clientEmail;
     private final String tokenUri;
     private final PrivateKey privateKey;
@@ -63,7 +64,7 @@ final class FirebaseStore {
 
     private FirebaseStore(String dbUrl, String serviceAccountJson) throws GeneralSecurityException {
         if (dbUrl.endsWith("/")) dbUrl = dbUrl.substring(0, dbUrl.length() - 1);
-        this.dataUrl = dbUrl + "/leaderboard.json";
+        this.dbUrl = dbUrl;
         this.clientEmail = require(serviceAccountJson, "client_email");
         this.tokenUri = require(serviceAccountJson, "token_uri");
         this.privateKey = parsePrivateKey(require(serviceAccountJson, "private_key"));
@@ -86,9 +87,9 @@ final class FirebaseStore {
         return KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(der));
     }
 
-    /** Fetches the stored leaderboard JSON, or null when nothing is stored yet. */
-    String load() throws IOException, InterruptedException {
-        HttpResponse<String> response = send(request().GET().build());
+    /** Fetches the JSON stored at the given node, or null when nothing is stored yet. */
+    String load(String node) throws IOException, InterruptedException {
+        HttpResponse<String> response = send(request(node).GET().build());
         if (response.statusCode() != 200) {
             throw new IOException("Firebase load failed (" + response.statusCode() + "): " + response.body());
         }
@@ -96,9 +97,9 @@ final class FirebaseStore {
         return "null".equals(body.strip()) ? null : body;
     }
 
-    /** Replaces the stored leaderboard with the given JSON array. */
-    void save(String json) throws IOException, InterruptedException {
-        HttpResponse<String> response = send(request()
+    /** Replaces the given node's content with the given JSON. */
+    void save(String node, String json) throws IOException, InterruptedException {
+        HttpResponse<String> response = send(request(node)
             .header("Content-Type", "application/json")
             .PUT(HttpRequest.BodyPublishers.ofString(json, StandardCharsets.UTF_8))
             .build());
@@ -107,9 +108,9 @@ final class FirebaseStore {
         }
     }
 
-    private HttpRequest.Builder request() throws IOException, InterruptedException {
+    private HttpRequest.Builder request(String node) throws IOException, InterruptedException {
         return HttpRequest.newBuilder()
-            .uri(URI.create(dataUrl))
+            .uri(URI.create(dbUrl + "/" + node + ".json"))
             .timeout(TIMEOUT)
             .header("Authorization", "Bearer " + accessToken());
     }

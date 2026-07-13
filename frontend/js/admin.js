@@ -15,6 +15,10 @@
     lbRefresh: document.getElementById("lb-refresh"),
     lbBody: document.getElementById("lb-body"),
     lbEmpty: document.getElementById("lb-empty"),
+    alRefresh: document.getElementById("al-refresh"),
+    alBody: document.getElementById("al-body"),
+    alEmpty: document.getElementById("al-empty"),
+    alCount: document.getElementById("al-count"),
     adminError: document.getElementById("admin-error"),
     logoutBtn: document.getElementById("logout-btn"),
   };
@@ -59,6 +63,7 @@
     showAdmin();
     renderWords(await res.json());
     loadLeaderboard();
+    loadAccessLog();
   }
 
   function renderWords(words) {
@@ -157,6 +162,41 @@
     });
   }
 
+  async function loadAccessLog() {
+    el.adminError.textContent = "";
+    try {
+      const res = await api("/api/admin/accesslog");
+      if (res.status === 401) return showLogin("Please log in again.");
+      if (!res.ok) throw new Error(await errorOf(res));
+      renderAccessLog(await res.json());
+    } catch (err) {
+      el.adminError.textContent = err.message || "Could not load the access log.";
+    }
+  }
+
+  function renderAccessLog(entries) {
+    el.alBody.textContent = "";
+    el.alEmpty.hidden = entries.length > 0;
+    el.alCount.textContent = String(entries.length);
+    for (const entry of entries) {
+      const tr = document.createElement("tr");
+
+      const time = document.createElement("td");
+      time.textContent = entry.time ? new Date(entry.time).toLocaleString() : "—";
+
+      const ip = document.createElement("td");
+      ip.textContent = entry.ip || "—";
+
+      const ua = document.createElement("td");
+      const raw = entry.userAgent || "—";
+      ua.textContent = raw.length > 70 ? raw.slice(0, 70) + "…" : raw;
+      ua.title = raw;
+
+      tr.append(time, ip, ua);
+      el.alBody.append(tr);
+    }
+  }
+
   el.loginForm.addEventListener("submit", (e) => {
     e.preventDefault();
     el.loginError.textContent = "";
@@ -179,6 +219,7 @@
   });
 
   el.lbRefresh.addEventListener("click", loadLeaderboard);
+  el.alRefresh.addEventListener("click", loadAccessLog);
   el.logoutBtn.addEventListener("click", () => showLogin());
 
   if (password) login(password);
