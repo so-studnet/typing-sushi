@@ -48,7 +48,8 @@ set "PORT=3000" && run.bat
 
 ## How it works
 
-1. Pick a course (Beginner $10 / Standard $30 / Pro $50) on the start screen.
+1. Pick a course (Beginner $10 / Standard $30 / Pro $50 / Notion $40 /
+   Notion AI $45) on the start screen.
 2. Type the displayed sushi-related word/phrase exactly; each correct
    character earns you $0.05.
 3. You have 60 seconds. If your total earnings reach the course price, the
@@ -61,9 +62,16 @@ set "PORT=3000" && run.bat
 ## Editing the word list
 
 The words/phrases quizzed in the game live in plain text files under
-`backend/wordbank/` (`easy.txt`, `medium.txt`, `hard.txt`) — one entry per
-line. Lines starting with `#` and blank lines are ignored, so you can use
-them for comments/organization.
+`backend/wordbank/` — one entry per line. Lines starting with `#` and blank
+lines are ignored, so you can use them for comments/organization.
+
+- `easy.txt`, `medium.txt`, `hard.txt` — the Beginner/Standard/Pro courses
+- `notion.txt` — the Notion course: example sentences imported from the
+  Notion "未知英単語帳" database's 例文 column (a one-time snapshot, not
+  synced)
+- `notion-words.txt` — seed words for the Notion AI course, imported from
+  the same database's 単語 column. These are not quizzed directly; see
+  "Notion AI course" below.
 
 To add, remove, or rebalance the quizzed content, just edit these files
 directly and restart the server (`./run.sh`) — no Java changes or
@@ -95,6 +103,25 @@ configured on this server." instead of failing. The model defaults to
 [console.groq.com/docs/models](https://console.groq.com/docs/models) for
 currently available model IDs). The API key is only ever used server-side
 and is never sent to the browser.
+
+## Notion AI course (optional)
+
+The 🤖 **Notion AI** course quizzes freshly generated sentences instead of a
+fixed list. Each time a round starts, the server picks a random sample of
+seed words from `backend/wordbank/notion-words.txt` (imported from the
+Notion "未知英単語帳" database's 単語 column) and asks the Groq API to write
+one TOEIC-style example sentence per seed word — so every round practices
+the same vocabulary in new sentences.
+
+It uses the same `GROQ_API_KEY` / `GROQ_MODEL` environment variables as the
+AI explanations above. When the key is not set, or the API call fails or
+returns something unusable, the course silently falls back to the static
+Notion course sentences (`notion.txt`), so it always works. Generation adds
+a few seconds before the round starts; the start screen shows a
+"Generating fresh TOEIC-style sentences…" note while it waits.
+
+The seed words can also be edited at runtime from the admin page's
+**Notion AI** tab (in-memory only, like the other lists).
 
 ## Admin page (optional)
 
@@ -200,7 +227,9 @@ used server-side; never commit it to the repo.
 
 ## API
 
-- `GET /api/words?difficulty=easy|medium|hard|notion&count=N` — random word list
+- `GET /api/words?difficulty=easy|medium|hard|notion|notion-ai&count=N` —
+  random word list; `notion-ai` generates fresh TOEIC-style sentences via
+  the Groq API (falls back to the `notion` pool without `GROQ_API_KEY`)
 - `GET /api/leaderboard` — top 10 scores
 - `POST /api/score` — `{"name": "...", "course": "...", "earned": 12.34}`,
   returns the updated top-10 leaderboard
@@ -231,11 +260,13 @@ backend/
   src/main/java/com/typingsushi/
     Main.java        HTTP server, routing, static file serving
     WordBank.java     loads word lists (below) by difficulty
+    AiSentences.java  Groq-generated TOEIC-style sentences for the Notion AI course
     Leaderboard.java  in-memory top scores, persisted to file or Firebase
     AccessLog.java    recent top-page visits, persisted to file or Firebase
     FirebaseStore.java Firebase Realtime Database REST client (optional persistence)
     Json.java         tiny JSON encode/decode helpers
-  wordbank/          editable word/phrase lists (easy.txt, medium.txt, hard.txt)
+  wordbank/          editable word/phrase lists (easy/medium/hard/notion.txt,
+                     notion-words.txt = Notion AI seed words)
 run.sh              compile + run (macOS/Linux/Git Bash)
 run.bat             compile + run (Windows cmd, uses JAVA_HOME)
 Dockerfile          container build for hosting (e.g. Render), see "Deploying" above

@@ -69,7 +69,14 @@ public final class Main {
         return candidate;
     }
 
-    /** GET /api/words?difficulty=easy|medium|hard&count=N */
+    /**
+     * GET /api/words?difficulty=easy|medium|hard|notion|notion-ai&count=N
+     *
+     * The notion-ai difficulty generates fresh TOEIC-style sentences from
+     * the Notion seed words via the Groq API (see AiSentences); when that is
+     * not configured or fails, it falls back to the static notion pool so
+     * the course still works.
+     */
     static final class WordsHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange ex) throws IOException {
@@ -85,8 +92,23 @@ public final class Main {
             } catch (NumberFormatException ignored) {
                 // keep default
             }
-            List<String> words = WordBank.get(difficulty, count);
+            List<String> words;
+            if ("notion-ai".equalsIgnoreCase(difficulty.strip())) {
+                List<String> generated = AiSentences.generate();
+                words = generated != null ? cycleToCount(generated, count) : WordBank.get("notion", count);
+            } else {
+                words = WordBank.get(difficulty, count);
+            }
             sendJson(ex, 200, Json.stringArray(words));
+        }
+
+        /** Repeats a generated batch until it fills the requested count. */
+        private static List<String> cycleToCount(List<String> batch, int count) {
+            List<String> result = new java.util.ArrayList<>(count);
+            for (int i = 0; i < count; i++) {
+                result.add(batch.get(i % batch.size()));
+            }
+            return result;
         }
     }
 
