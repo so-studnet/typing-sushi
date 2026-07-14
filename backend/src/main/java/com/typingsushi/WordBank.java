@@ -33,7 +33,8 @@ final class WordBank {
         "easy.txt", List.of("sushi", "wasabi", "green tea"),
         "medium.txt", List.of("Practice makes perfect.", "Better late than never."),
         "hard.txt", List.of("Please restart your computer and try logging in again."),
-        "notion.txt", List.of("Practice makes perfect.")
+        "notion.txt", List.of("Practice makes perfect."),
+        "notion-words.txt", List.of("practice", "improve", "succeed")
     );
 
     private static final Map<String, List<String>> POOLS = loadAllPools();
@@ -99,6 +100,9 @@ final class WordBank {
         pools.put("medium", loadPool(dir, "medium.txt"));
         pools.put("hard", loadPool(dir, "hard.txt"));
         pools.put("notion", loadPool(dir, "notion.txt"));
+        // Seed words for the Notion AI course; AiSentences turns a random
+        // sample of these into fresh TOEIC-style sentences per round.
+        pools.put("notion-ai", loadPool(dir, "notion-words.txt"));
         return pools;
     }
 

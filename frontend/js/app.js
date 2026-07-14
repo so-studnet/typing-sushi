@@ -6,6 +6,7 @@
     standard: { label: "Standard", target: 30, difficulty: "medium", rate: 0.05 },
     pro: { label: "Pro", target: 50, difficulty: "hard", rate: 0.05 },
     notion: { label: "Notion", target: 40, difficulty: "notion", rate: 0.05 },
+    "notion-ai": { label: "Notion AI", target: 45, difficulty: "notion-ai", rate: 0.05 },
   };
   const DEFAULT_DURATION = 60;
   const SUSHI_EMOJI = ["🍣", "🍙", "🍱", "🍤", "🐟", "🍚"];
@@ -130,10 +131,13 @@
 
   async function startGame(courseKey) {
     const course = COURSES[courseKey];
-    el.startError.textContent = "";
+    el.startError.textContent = course.difficulty === "notion-ai"
+      ? "🤖 Generating fresh TOEIC-style sentences…"
+      : "";
     let words;
     try {
       words = await fetchWords(course.difficulty);
+      el.startError.textContent = "";
     } catch (err) {
       el.startError.textContent = "Could not reach the kitchen (server). Please try again.";
       return;

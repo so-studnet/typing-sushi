@@ -38,13 +38,16 @@
       <p class="admin-note">
         Changes here apply to the running server immediately, but are
         in-memory only &mdash; a restart or redeploy reloads the original
-        lists from <code>backend/wordbank/*.txt</code>.
+        lists from <code>backend/wordbank/*.txt</code>. The Notion AI tab
+        edits the seed words the AI turns into fresh TOEIC-style sentences,
+        not the sentences themselves.
       </p>
       <div class="duration-options admin-tabs" id="difficulty-tabs">
         <button class="duration-btn selected" data-difficulty="easy">Beginner</button>
         <button class="duration-btn" data-difficulty="medium">Standard</button>
         <button class="duration-btn" data-difficulty="hard">Pro</button>
         <button class="duration-btn" data-difficulty="notion">Notion</button>
+        <button class="duration-btn" data-difficulty="notion-ai">Notion AI</button>
       </div>
       <form id="add-word-form" class="admin-add">
         <input type="text" id="new-word" placeholder="New word or phrase" required />

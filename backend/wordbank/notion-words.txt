@@ -1,0 +1,58 @@
+# Sushi Typing - Notion AI seed words
+#
+# One word/phrase per line, imported from the Notion "未知英単語帳"
+# (unknown English words) database's "単語" column. The Notion AI course
+# does NOT quiz these directly: the server sends a random sample of them
+# to the Groq API to generate fresh TOEIC-style example sentences for
+# each round. This is a one-time snapshot, not kept in sync with Notion.
+# Lines starting with '#' and blank lines are ignored.
+# Edit this file and restart the server to change the seed words.
+
+find fault with
+result in
+superior to
+have been married
+during my stay
+frightened
+play a role
+put together
+have to do with
+be disappointed
+strictly speaking
+carton of milk
+tarnished
+quite a few
+rising
+measure up
+penpals
+convey
+vouch
+said to have been
+so that
+seen
+make to do
+what is worse
+there's no telling
+surrounded by
+time to went
+only to
+as indicated
+lodging house
+participated in
+restoration
+imperative
+seldom
+on arriving
+come to using
+it goes without saying
+grant
+deteriorating
+fulfill
+retain
+inclement weather
+won't be long before
+wholesome
+be prepared
+busy taking
+suitably
+aside from
