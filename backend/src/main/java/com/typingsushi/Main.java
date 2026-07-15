@@ -269,10 +269,12 @@ public final class Main {
 
     /**
      * Admin API for editing the word pools at runtime (in-memory only; a
-     * restart reloads the .txt files):
-     *   GET    /api/admin/words?difficulty=easy            -> current word list
-     *   POST   /api/admin/words {"difficulty":..,"word":..} -> add, returns updated list
-     *   DELETE /api/admin/words?difficulty=easy&word=...    -> remove, returns updated list
+     * restart reloads the .txt files). Each mutation returns the updated
+     * list, an array of {"word":..,"enabled":..} objects:
+     *   GET    /api/admin/words?difficulty=easy                          -> current list
+     *   POST   /api/admin/words {"difficulty":..,"word":..}              -> add word
+     *   PUT    /api/admin/words {"difficulty":..,"word":..,"enabled":..} -> enable/disable word
+     *   DELETE /api/admin/words?difficulty=easy&word=...                 -> remove word
      */
     static final class AdminWordsHandler implements HttpHandler {
         @Override
@@ -281,6 +283,7 @@ public final class Main {
             switch (ex.getRequestMethod().toUpperCase()) {
                 case "GET" -> list(ex);
                 case "POST" -> add(ex);
+                case "PUT" -> setEnabled(ex);
                 case "DELETE" -> remove(ex);
                 default -> sendMethodNotAllowed(ex);
             }
@@ -288,35 +291,46 @@ public final class Main {
 
         private void list(HttpExchange ex) throws IOException {
             String difficulty = parseQuery(ex.getRequestURI().getRawQuery()).get("difficulty");
-            List<String> words = WordBank.listAll(difficulty);
-            if (words == null) {
+            String json = WordBank.listJson(difficulty);
+            if (json == null) {
                 sendJson(ex, 404, "{\"error\":\"Unknown difficulty.\"}");
                 return;
             }
-            sendJson(ex, 200, Json.stringArray(words));
+            sendJson(ex, 200, json);
         }
 
         private void add(HttpExchange ex) throws IOException {
             String body = readBody(ex);
             String difficulty = Json.getString(body, "difficulty");
             String word = Json.getString(body, "word");
-            String error = WordBank.add(difficulty, word);
-            if (error != null) {
-                sendJson(ex, 400, "{\"error\":\"" + Json.escape(error) + "\"}");
+            respond(ex, difficulty, WordBank.add(difficulty, word));
+        }
+
+        private void setEnabled(HttpExchange ex) throws IOException {
+            String body = readBody(ex);
+            String difficulty = Json.getString(body, "difficulty");
+            String word = Json.getString(body, "word");
+            Boolean enabled = Json.getBoolean(body, "enabled");
+            if (enabled == null) {
+                sendJson(ex, 400, "{\"error\":\"Missing 'enabled'.\"}");
                 return;
             }
-            sendJson(ex, 200, Json.stringArray(WordBank.listAll(difficulty)));
+            respond(ex, difficulty, WordBank.setEnabled(difficulty, word, enabled));
         }
 
         private void remove(HttpExchange ex) throws IOException {
             Map<String, String> query = parseQuery(ex.getRequestURI().getRawQuery());
             String difficulty = query.get("difficulty");
-            String error = WordBank.remove(difficulty, query.get("word"));
+            respond(ex, difficulty, WordBank.remove(difficulty, query.get("word")));
+        }
+
+        /** Sends the mutation's error, or the updated word list on success. */
+        private void respond(HttpExchange ex, String difficulty, String error) throws IOException {
             if (error != null) {
                 sendJson(ex, 400, "{\"error\":\"" + Json.escape(error) + "\"}");
                 return;
             }
-            sendJson(ex, 200, Json.stringArray(WordBank.listAll(difficulty)));
+            sendJson(ex, 200, WordBank.listJson(difficulty));
         }
     }
 

@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -21,9 +22,11 @@ import java.util.Map;
  * recompilation required.
  *
  * The pools can also be edited at runtime through the admin API (see
- * Main.AdminWordsHandler). Those edits are deliberately in-memory only:
- * they apply to the running server immediately but are gone after a
- * restart, when the pools reload from the .txt files.
+ * Main.AdminWordsHandler): words can be added, removed, or toggled between
+ * enabled and disabled -- disabled words stay in the list but are never
+ * quizzed. Those edits are deliberately in-memory only: they apply to the
+ * running server immediately but are gone after a restart, when the pools
+ * reload from the .txt files (everything enabled).
  */
 final class WordBank {
 
@@ -37,7 +40,8 @@ final class WordBank {
         "notion-words.txt", List.of("practice", "improve", "succeed")
     );
 
-    private static final Map<String, List<String>> POOLS = loadAllPools();
+    // Each pool maps word -> enabled, in file order.
+    private static final Map<String, LinkedHashMap<String, Boolean>> POOLS = loadAllPools();
 
     private WordBank() {
     }
@@ -45,7 +49,12 @@ final class WordBank {
     static List<String> get(String difficulty, int count) {
         List<String> shuffled;
         synchronized (POOLS) {
-            shuffled = new ArrayList<>(POOLS.getOrDefault(normalize(difficulty), POOLS.get("medium")));
+            LinkedHashMap<String, Boolean> pool =
+                POOLS.getOrDefault(normalize(difficulty), POOLS.get("medium"));
+            shuffled = enabledWords(pool);
+            // The admin guards keep at least one word enabled per pool, but
+            // never risk the infinite fill loop below on an empty list.
+            if (shuffled.isEmpty()) shuffled = new ArrayList<>(pool.keySet());
         }
 
         List<String> result = new ArrayList<>();
@@ -56,23 +65,35 @@ final class WordBank {
         return result.subList(0, count);
     }
 
-    /** The current pool for a difficulty, in file order, or null if unknown. */
-    static List<String> listAll(String difficulty) {
+    /**
+     * The current pool for a difficulty as a JSON array of
+     * {"word":..,"enabled":..} objects in file order, or null if unknown.
+     */
+    static String listJson(String difficulty) {
         synchronized (POOLS) {
-            List<String> pool = POOLS.get(normalize(difficulty));
-            return pool == null ? null : List.copyOf(pool);
+            LinkedHashMap<String, Boolean> pool = POOLS.get(normalize(difficulty));
+            if (pool == null) return null;
+            StringBuilder sb = new StringBuilder("[");
+            boolean first = true;
+            for (Map.Entry<String, Boolean> e : pool.entrySet()) {
+                if (!first) sb.append(',');
+                first = false;
+                sb.append("{\"word\":\"").append(Json.escape(e.getKey()))
+                  .append("\",\"enabled\":").append(e.getValue()).append('}');
+            }
+            return sb.append(']').toString();
         }
     }
 
-    /** Adds a word to a pool at runtime. Returns an error message, or null on success. */
+    /** Adds a word (enabled) to a pool at runtime. Returns an error message, or null on success. */
     static String add(String difficulty, String word) {
         if (word == null || word.strip().isEmpty()) return "Word must not be empty.";
         word = word.strip();
         synchronized (POOLS) {
-            List<String> pool = POOLS.get(normalize(difficulty));
+            LinkedHashMap<String, Boolean> pool = POOLS.get(normalize(difficulty));
             if (pool == null) return "Unknown difficulty.";
-            if (pool.contains(word)) return "That word is already in this list.";
-            pool.add(word);
+            if (pool.containsKey(word)) return "That word is already in this list.";
+            pool.put(word, true);
             return null;
         }
     }
@@ -81,21 +102,50 @@ final class WordBank {
     static String remove(String difficulty, String word) {
         if (word == null) return "Word must not be empty.";
         synchronized (POOLS) {
-            List<String> pool = POOLS.get(normalize(difficulty));
+            LinkedHashMap<String, Boolean> pool = POOLS.get(normalize(difficulty));
             if (pool == null) return "Unknown difficulty.";
-            if (pool.size() <= 1) return "Cannot remove the last word in a list.";
-            if (!pool.remove(word)) return "That word is not in this list.";
+            if (!pool.containsKey(word)) return "That word is not in this list.";
+            if (Boolean.TRUE.equals(pool.get(word)) && enabledWords(pool).size() <= 1) {
+                return "Cannot remove the last enabled word in a list.";
+            }
+            pool.remove(word);
             return null;
         }
+    }
+
+    /**
+     * Enables or disables a word at runtime; disabled words stay listed but
+     * are never quizzed. Returns an error message, or null on success.
+     */
+    static String setEnabled(String difficulty, String word, boolean enabled) {
+        if (word == null) return "Word must not be empty.";
+        synchronized (POOLS) {
+            LinkedHashMap<String, Boolean> pool = POOLS.get(normalize(difficulty));
+            if (pool == null) return "Unknown difficulty.";
+            if (!pool.containsKey(word)) return "That word is not in this list.";
+            if (!enabled && Boolean.TRUE.equals(pool.get(word)) && enabledWords(pool).size() <= 1) {
+                return "Cannot disable the last enabled word in a list.";
+            }
+            pool.put(word, enabled);
+            return null;
+        }
+    }
+
+    private static List<String> enabledWords(LinkedHashMap<String, Boolean> pool) {
+        List<String> words = new ArrayList<>();
+        for (Map.Entry<String, Boolean> e : pool.entrySet()) {
+            if (Boolean.TRUE.equals(e.getValue())) words.add(e.getKey());
+        }
+        return words;
     }
 
     private static String normalize(String difficulty) {
         return difficulty == null ? "" : difficulty.strip().toLowerCase();
     }
 
-    private static Map<String, List<String>> loadAllPools() {
+    private static Map<String, LinkedHashMap<String, Boolean>> loadAllPools() {
         Path dir = resolveWordBankDir();
-        Map<String, List<String>> pools = new HashMap<>();
+        Map<String, LinkedHashMap<String, Boolean>> pools = new HashMap<>();
         pools.put("easy", loadPool(dir, "easy.txt"));
         pools.put("medium", loadPool(dir, "medium.txt"));
         pools.put("hard", loadPool(dir, "hard.txt"));
@@ -114,7 +164,7 @@ final class WordBank {
         return here;
     }
 
-    private static List<String> loadPool(Path dir, String filename) {
+    private static LinkedHashMap<String, Boolean> loadPool(Path dir, String filename) {
         Path file = dir.resolve(filename);
         List<String> lines = new ArrayList<>();
         try {
@@ -131,6 +181,11 @@ final class WordBank {
             lines.addAll(FALLBACK.getOrDefault(filename, List.of("sushi")));
         }
         // Mutable on purpose: the admin API edits these pools at runtime.
-        return lines;
+        // Everything starts enabled; the admin API can disable entries.
+        LinkedHashMap<String, Boolean> pool = new LinkedHashMap<>();
+        for (String line : lines) {
+            pool.put(line, true);
+        }
+        return pool;
     }
 }
