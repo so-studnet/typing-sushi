@@ -9,6 +9,7 @@
     loginError: document.getElementById("login-error"),
     tabs: document.getElementById("difficulty-tabs"),
     addWordForm: document.getElementById("add-word-form"),
+    resetWords: document.getElementById("reset-words"),
     newWord: document.getElementById("new-word"),
     wordCount: document.getElementById("word-count"),
     wordList: document.getElementById("word-list"),
@@ -161,6 +162,25 @@
     }
   }
 
+  async function resetWords() {
+    if (!window.confirm(
+      `Discard the saved "${difficulty}" list and reload the original file defaults?`
+    )) return;
+    el.adminError.textContent = "";
+    try {
+      const res = await api("/api/admin/words/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ difficulty }),
+      });
+      if (res.status === 401) return showLogin("Please log in again.");
+      if (!res.ok) throw new Error(await errorOf(res));
+      renderWords(await res.json());
+    } catch (err) {
+      el.adminError.textContent = err.message || "Could not reset the list.";
+    }
+  }
+
   async function loadLeaderboard() {
     el.adminError.textContent = "";
     try {
@@ -250,6 +270,7 @@
     if (word) addWord(word);
   });
 
+  el.resetWords.addEventListener("click", resetWords);
   el.lbRefresh.addEventListener("click", loadLeaderboard);
   el.alRefresh.addEventListener("click", loadAccessLog);
   el.logoutBtn.addEventListener("click", () => showLogin());

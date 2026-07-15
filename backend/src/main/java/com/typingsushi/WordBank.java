@@ -14,19 +14,19 @@ import java.util.Map;
 /**
  * Holds the word/phrase lists used by the typing game, grouped by difficulty.
  *
- * The actual content lives in plain text files under wordbank/ (one
- * entry per line; '#' starts a comment, blank lines are ignored) instead of
- * being hardcoded in this class. That way the game's quizzed words can be
- * edited and maintained -- add, remove, or rebalance entries -- by editing
- * those .txt files and restarting the server, with no Java changes or
- * recompilation required.
+ * The base content lives in plain text files under wordbank/ (one entry per
+ * line; '#' starts a comment, blank lines are ignored) instead of being
+ * hardcoded in this class, so the quizzed words can be edited by editing
+ * those .txt files -- no Java changes or recompilation required.
  *
  * The pools can also be edited at runtime through the admin API (see
  * Main.AdminWordsHandler): words can be added, removed, or toggled between
  * enabled and disabled -- disabled words stay in the list but are never
- * quizzed. Those edits are deliberately in-memory only: they apply to the
- * running server immediately but are gone after a restart, when the pools
- * reload from the .txt files (everything enabled).
+ * quizzed. Those edits are persisted (to the Firebase Realtime Database
+ * under /wordbank/{difficulty} when configured, to local files under data/
+ * otherwise), so they survive restarts and redeploys. At startup, a saved
+ * pool takes precedence over its .txt file; the admin "reset" action
+ * discards the saved pool and reloads the .txt defaults.
  */
 final class WordBank {
 
@@ -40,10 +40,41 @@ final class WordBank {
         "notion-words.txt", List.of("practice", "improve", "succeed")
     );
 
+    // difficulty -> source .txt file. notion-ai holds the seed words for the
+    // Notion AI course; AiSentences turns a random sample of these into
+    // fresh TOEIC-style sentences per round.
+    private static final Map<String, String> FILES = Map.of(
+        "easy", "easy.txt",
+        "medium", "medium.txt",
+        "hard", "hard.txt",
+        "notion", "notion.txt",
+        "notion-ai", "notion-words.txt"
+    );
+
     // Each pool maps word -> enabled, in file order.
     private static final Map<String, LinkedHashMap<String, Boolean>> POOLS = loadAllPools();
 
+    private static volatile FirebaseStore firebase;
+
     private WordBank() {
+    }
+
+    /**
+     * Wires up persistence and overlays any previously saved pools on top of
+     * the .txt defaults. Call once at startup, before serving requests.
+     */
+    static void initPersistence(FirebaseStore store) {
+        firebase = store;
+        for (String difficulty : FILES.keySet()) {
+            String saved = loadPersisted(difficulty);
+            if (saved == null) continue;
+            LinkedHashMap<String, Boolean> pool = parsePool(saved);
+            // Ignore empty/corrupt saved state rather than breaking a course.
+            if (pool.isEmpty() || !pool.containsValue(true)) continue;
+            synchronized (POOLS) {
+                POOLS.put(difficulty, pool);
+            }
+        }
     }
 
     static List<String> get(String difficulty, int count) {
@@ -72,35 +103,30 @@ final class WordBank {
     static String listJson(String difficulty) {
         synchronized (POOLS) {
             LinkedHashMap<String, Boolean> pool = POOLS.get(normalize(difficulty));
-            if (pool == null) return null;
-            StringBuilder sb = new StringBuilder("[");
-            boolean first = true;
-            for (Map.Entry<String, Boolean> e : pool.entrySet()) {
-                if (!first) sb.append(',');
-                first = false;
-                sb.append("{\"word\":\"").append(Json.escape(e.getKey()))
-                  .append("\",\"enabled\":").append(e.getValue()).append('}');
-            }
-            return sb.append(']').toString();
+            return pool == null ? null : toJson(pool);
         }
     }
 
-    /** Adds a word (enabled) to a pool at runtime. Returns an error message, or null on success. */
+    /** Adds a word (enabled) to a pool. Returns an error message, or null on success. */
     static String add(String difficulty, String word) {
         if (word == null || word.strip().isEmpty()) return "Word must not be empty.";
         word = word.strip();
+        String snapshot;
         synchronized (POOLS) {
             LinkedHashMap<String, Boolean> pool = POOLS.get(normalize(difficulty));
             if (pool == null) return "Unknown difficulty.";
             if (pool.containsKey(word)) return "That word is already in this list.";
             pool.put(word, true);
-            return null;
+            snapshot = toJson(pool);
         }
+        persist(difficulty, snapshot);
+        return null;
     }
 
-    /** Removes a word from a pool at runtime. Returns an error message, or null on success. */
+    /** Removes a word from a pool. Returns an error message, or null on success. */
     static String remove(String difficulty, String word) {
         if (word == null) return "Word must not be empty.";
+        String snapshot;
         synchronized (POOLS) {
             LinkedHashMap<String, Boolean> pool = POOLS.get(normalize(difficulty));
             if (pool == null) return "Unknown difficulty.";
@@ -109,16 +135,19 @@ final class WordBank {
                 return "Cannot remove the last enabled word in a list.";
             }
             pool.remove(word);
-            return null;
+            snapshot = toJson(pool);
         }
+        persist(difficulty, snapshot);
+        return null;
     }
 
     /**
-     * Enables or disables a word at runtime; disabled words stay listed but
-     * are never quizzed. Returns an error message, or null on success.
+     * Enables or disables a word; disabled words stay listed but are never
+     * quizzed. Returns an error message, or null on success.
      */
     static String setEnabled(String difficulty, String word, boolean enabled) {
         if (word == null) return "Word must not be empty.";
+        String snapshot;
         synchronized (POOLS) {
             LinkedHashMap<String, Boolean> pool = POOLS.get(normalize(difficulty));
             if (pool == null) return "Unknown difficulty.";
@@ -127,8 +156,26 @@ final class WordBank {
                 return "Cannot disable the last enabled word in a list.";
             }
             pool.put(word, enabled);
-            return null;
+            snapshot = toJson(pool);
         }
+        persist(difficulty, snapshot);
+        return null;
+    }
+
+    /**
+     * Discards a pool's saved state and reloads its .txt defaults
+     * (everything enabled). Returns an error message, or null on success.
+     */
+    static String reset(String difficulty) {
+        String key = normalize(difficulty);
+        String filename = FILES.get(key);
+        if (filename == null) return "Unknown difficulty.";
+        LinkedHashMap<String, Boolean> fresh = loadPool(resolveWordBankDir(), filename);
+        synchronized (POOLS) {
+            POOLS.put(key, fresh);
+        }
+        clearPersisted(key);
+        return null;
     }
 
     private static List<String> enabledWords(LinkedHashMap<String, Boolean> pool) {
@@ -139,20 +186,106 @@ final class WordBank {
         return words;
     }
 
-    private static String normalize(String difficulty) {
-        return difficulty == null ? "" : difficulty.strip().toLowerCase();
+    private static String toJson(LinkedHashMap<String, Boolean> pool) {
+        StringBuilder sb = new StringBuilder("[");
+        boolean first = true;
+        for (Map.Entry<String, Boolean> e : pool.entrySet()) {
+            if (!first) sb.append(',');
+            first = false;
+            sb.append("{\"word\":\"").append(Json.escape(e.getKey()))
+              .append("\",\"enabled\":").append(e.getValue()).append('}');
+        }
+        return sb.append(']').toString();
     }
+
+    private static LinkedHashMap<String, Boolean> parsePool(String json) {
+        LinkedHashMap<String, Boolean> pool = new LinkedHashMap<>();
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\{[^{}]*}").matcher(json);
+        while (m.find()) {
+            String obj = m.group();
+            String word = Json.getString(obj, "word");
+            if (word == null || word.isBlank()) continue;
+            Boolean enabled = Json.getBoolean(obj, "enabled");
+            pool.put(word, enabled == null || enabled);
+        }
+        return pool;
+    }
+
+    // --- persistence (Firebase when configured, local files otherwise) ---
+
+    private static String node(String difficulty) {
+        return "wordbank/" + normalize(difficulty);
+    }
+
+    private static Path localFile(String difficulty) {
+        return Path.of("data", "wordbank-" + normalize(difficulty) + ".json");
+    }
+
+    private static String loadPersisted(String difficulty) {
+        if (firebase != null) {
+            try {
+                return firebase.load(node(difficulty));
+            } catch (Exception e) {
+                System.err.println("Could not load word list '" + difficulty
+                    + "' from Firebase: " + e.getMessage());
+                return null;
+            }
+        }
+        try {
+            Path file = localFile(difficulty);
+            return Files.exists(file) ? Files.readString(file, StandardCharsets.UTF_8) : null;
+        } catch (IOException e) {
+            System.err.println("Could not load word list '" + difficulty + "': " + e.getMessage());
+            return null;
+        }
+    }
+
+    private static void persist(String difficulty, String json) {
+        if (firebase != null) {
+            try {
+                firebase.save(node(difficulty), json);
+            } catch (Exception e) {
+                System.err.println("Could not save word list '" + difficulty
+                    + "' to Firebase: " + e.getMessage());
+            }
+            return;
+        }
+        try {
+            Path file = localFile(difficulty);
+            Path parent = file.toAbsolutePath().getParent();
+            if (parent != null) Files.createDirectories(parent);
+            Files.writeString(file, json, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            System.err.println("Could not save word list '" + difficulty + "': " + e.getMessage());
+        }
+    }
+
+    private static void clearPersisted(String difficulty) {
+        if (firebase != null) {
+            try {
+                // Writing null deletes the node.
+                firebase.save(node(difficulty), "null");
+            } catch (Exception e) {
+                System.err.println("Could not clear saved word list '" + difficulty
+                    + "' in Firebase: " + e.getMessage());
+            }
+            return;
+        }
+        try {
+            Files.deleteIfExists(localFile(difficulty));
+        } catch (IOException e) {
+            System.err.println("Could not clear saved word list '" + difficulty + "': " + e.getMessage());
+        }
+    }
+
+    // --- .txt defaults ---
 
     private static Map<String, LinkedHashMap<String, Boolean>> loadAllPools() {
         Path dir = resolveWordBankDir();
         Map<String, LinkedHashMap<String, Boolean>> pools = new HashMap<>();
-        pools.put("easy", loadPool(dir, "easy.txt"));
-        pools.put("medium", loadPool(dir, "medium.txt"));
-        pools.put("hard", loadPool(dir, "hard.txt"));
-        pools.put("notion", loadPool(dir, "notion.txt"));
-        // Seed words for the Notion AI course; AiSentences turns a random
-        // sample of these into fresh TOEIC-style sentences per round.
-        pools.put("notion-ai", loadPool(dir, "notion-words.txt"));
+        for (Map.Entry<String, String> e : FILES.entrySet()) {
+            pools.put(e.getKey(), loadPool(dir, e.getValue()));
+        }
         return pools;
     }
 
@@ -180,12 +313,15 @@ final class WordBank {
             System.err.println("Word bank file " + file + " is empty or missing; using fallback words.");
             lines.addAll(FALLBACK.getOrDefault(filename, List.of("sushi")));
         }
-        // Mutable on purpose: the admin API edits these pools at runtime.
         // Everything starts enabled; the admin API can disable entries.
         LinkedHashMap<String, Boolean> pool = new LinkedHashMap<>();
         for (String line : lines) {
             pool.put(line, true);
         }
         return pool;
+    }
+
+    private static String normalize(String difficulty) {
+        return difficulty == null ? "" : difficulty.strip().toLowerCase();
     }
 }
