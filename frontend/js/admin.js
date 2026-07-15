@@ -66,21 +66,53 @@
     loadAccessLog();
   }
 
-  function renderWords(words) {
-    el.wordCount.textContent = String(words.length);
+  function renderWords(entries) {
+    const enabled = entries.filter((e) => e.enabled).length;
+    el.wordCount.textContent = `${entries.length} entries (${enabled} enabled)`;
     el.wordList.textContent = "";
-    for (const word of words) {
+    for (const entry of entries) {
       const li = document.createElement("li");
+
+      const label = document.createElement("label");
+      label.className = "word-toggle";
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = entry.enabled;
+      checkbox.title = entry.enabled
+        ? "Enabled — uncheck to stop quizzing this word"
+        : "Disabled — check to quiz this word again";
+      checkbox.addEventListener("change", () => setWordEnabled(entry.word, checkbox.checked));
       const text = document.createElement("span");
-      text.textContent = word;
+      text.textContent = entry.word;
+      if (!entry.enabled) text.className = "word-off";
+      label.append(checkbox, text);
+
       const del = document.createElement("button");
       del.type = "button";
       del.className = "word-delete";
       del.textContent = "✕";
       del.title = "Remove this word";
-      del.addEventListener("click", () => removeWord(word));
-      li.append(text, del);
+      del.addEventListener("click", () => removeWord(entry.word));
+
+      li.append(label, del);
       el.wordList.append(li);
+    }
+  }
+
+  async function setWordEnabled(word, enabled) {
+    el.adminError.textContent = "";
+    try {
+      const res = await api("/api/admin/words", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ difficulty, word, enabled }),
+      });
+      if (res.status === 401) return showLogin("Please log in again.");
+      if (!res.ok) throw new Error(await errorOf(res));
+      renderWords(await res.json());
+    } catch (err) {
+      el.adminError.textContent = err.message || "Could not update the word.";
+      loadWords(); // re-sync the checkboxes after a rejected toggle
     }
   }
 

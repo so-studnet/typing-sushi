@@ -54,6 +54,13 @@ final class Json {
             .replace("\\t", "\t");
     }
 
+    /** Extracts a boolean field value from a flat JSON object, e.g. "enabled":true. */
+    static Boolean getBoolean(String json, String key) {
+        Matcher m = Pattern.compile("\"" + Pattern.quote(key) + "\"\\s*:\\s*(true|false)").matcher(json);
+        if (!m.find()) return null;
+        return Boolean.parseBoolean(m.group(1));
+    }
+
     /** Extracts a numeric field value from a flat JSON object, e.g. "earned":12.5. */
     static Double getNumber(String json, String key) {
         Matcher m = Pattern.compile("\"" + Pattern.quote(key) + "\"\\s*:\\s*(-?\\d+(?:\\.\\d+)?)").matcher(json);

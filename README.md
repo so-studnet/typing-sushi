@@ -128,10 +128,12 @@ The seed words can also be edited at runtime from the admin page's
 Open `/admin.html` (e.g. `https://your-app.onrender.com/admin.html`) to
 manage the running server from the browser:
 
-- **Word lists**: view, add, and remove words per course at runtime. These
-  edits apply to the live server immediately but are in-memory only — a
-  restart or redeploy reloads the original `backend/wordbank/*.txt` files.
-  For permanent changes, edit those files instead.
+- **Word lists**: view, add, remove, and enable/disable words per course at
+  runtime. Unchecking a word keeps it in the list but stops it being
+  quizzed, so it can be brought back later without retyping it. These edits
+  apply to the live server immediately but are in-memory only — a restart
+  or redeploy reloads the original `backend/wordbank/*.txt` files with
+  everything enabled. For permanent changes, edit those files instead.
 - **Leaderboard**: view the stored top scores, including when each one was
   recorded.
 - **Access log**: view recent visits to the game's top page (up to 200,
@@ -239,9 +241,13 @@ used server-side; never commit it to the repo.
 Admin endpoints (all require the `X-Admin-Password` header matching the
 `ADMIN_PASSWORD` environment variable, see "Admin page" above):
 
-- `GET /api/admin/words?difficulty=easy` — full word list for a difficulty
+- `GET /api/admin/words?difficulty=easy` — full word list for a difficulty,
+  as `[{"word": "...", "enabled": true}, ...]`
 - `POST /api/admin/words` — `{"difficulty": "...", "word": "..."}`, adds a
   word at runtime, returns the updated list
+- `PUT /api/admin/words` — `{"difficulty": "...", "word": "...",
+  "enabled": false}`, enables/disables a word at runtime (disabled words
+  stay listed but are not quizzed), returns the updated list
 - `DELETE /api/admin/words?difficulty=easy&word=...` — removes a word at
   runtime, returns the updated list
 - `GET /api/admin/leaderboard` — top scores including `recordedAt`
