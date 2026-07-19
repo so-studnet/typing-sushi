@@ -34,14 +34,15 @@
   <section id="screen-admin" class="screen">
 
     <div class="admin-panel">
-      <h3>📝 Word lists</h3>
+      <h3>📝 Word lists <button id="reset-words" class="admin-refresh" type="button">↩ Reset to file defaults</button></h3>
       <p class="admin-note">
-        Changes here apply to the running server immediately, but are
-        in-memory only &mdash; a restart or redeploy reloads the original
-        lists from <code>backend/wordbank/*.txt</code> (everything enabled).
-        Uncheck a word to stop quizzing it without deleting it; check it to
-        bring it back. The Notion AI tab edits the seed words the AI turns
-        into fresh TOEIC-style sentences, not the sentences themselves.
+        Changes here apply immediately and are saved to the database, so
+        they survive restarts and redeploys. Uncheck a word to stop quizzing
+        it without deleting it; check it to bring it back. &ldquo;Reset to
+        file defaults&rdquo; discards this tab's saved list and reloads the
+        original <code>backend/wordbank/*.txt</code> (everything enabled).
+        The Notion AI tab edits the seed words the AI turns into fresh
+        TOEIC-style sentences, not the sentences themselves.
       </p>
       <div class="duration-options admin-tabs" id="difficulty-tabs">
         <button class="duration-btn selected" data-difficulty="easy">Beginner</button>

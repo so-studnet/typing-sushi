@@ -40,6 +40,7 @@ public final class Main {
         FirebaseStore firebase = FirebaseStore.fromEnv();
         Leaderboard leaderboard = new Leaderboard(Path.of("data", "leaderboard.json"), firebase);
         AccessLog accessLog = new AccessLog(Path.of("data", "accesslog.json"), firebase);
+        WordBank.initPersistence(firebase);
 
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
         server.setExecutor(Executors.newFixedThreadPool(8));
@@ -57,8 +58,8 @@ public final class Main {
         System.out.println("Sushi Typing server running at http://localhost:" + port);
         System.out.println("Serving frontend from: " + frontendDir.toAbsolutePath());
         System.out.println(firebase != null
-            ? "Leaderboard persistence: Firebase Realtime Database"
-            : "Leaderboard persistence: local file (data/leaderboard.json)");
+            ? "Persistence (leaderboard, access log, word lists): Firebase Realtime Database"
+            : "Persistence (leaderboard, access log, word lists): local files under data/");
     }
 
     private static Path resolveFrontendDir() {
@@ -268,21 +269,28 @@ public final class Main {
     }
 
     /**
-     * Admin API for editing the word pools at runtime (in-memory only; a
-     * restart reloads the .txt files). Each mutation returns the updated
-     * list, an array of {"word":..,"enabled":..} objects:
+     * Admin API for editing the word pools. Edits are persisted (Firebase
+     * when configured, local files otherwise) and survive restarts; "reset"
+     * discards a pool's saved state and reloads its .txt defaults. Each
+     * mutation returns the updated list, an array of
+     * {"word":..,"enabled":..} objects:
      *   GET    /api/admin/words?difficulty=easy                          -> current list
      *   POST   /api/admin/words {"difficulty":..,"word":..}              -> add word
      *   PUT    /api/admin/words {"difficulty":..,"word":..,"enabled":..} -> enable/disable word
      *   DELETE /api/admin/words?difficulty=easy&word=...                 -> remove word
+     *   POST   /api/admin/words/reset {"difficulty":..}                  -> reset to .txt defaults
      */
     static final class AdminWordsHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange ex) throws IOException {
             if (!requireAdmin(ex)) return;
+            boolean isReset = ex.getRequestURI().getPath().endsWith("/reset");
             switch (ex.getRequestMethod().toUpperCase()) {
                 case "GET" -> list(ex);
-                case "POST" -> add(ex);
+                case "POST" -> {
+                    if (isReset) reset(ex);
+                    else add(ex);
+                }
                 case "PUT" -> setEnabled(ex);
                 case "DELETE" -> remove(ex);
                 default -> sendMethodNotAllowed(ex);
@@ -322,6 +330,11 @@ public final class Main {
             Map<String, String> query = parseQuery(ex.getRequestURI().getRawQuery());
             String difficulty = query.get("difficulty");
             respond(ex, difficulty, WordBank.remove(difficulty, query.get("word")));
+        }
+
+        private void reset(HttpExchange ex) throws IOException {
+            String difficulty = Json.getString(readBody(ex), "difficulty");
+            respond(ex, difficulty, WordBank.reset(difficulty));
         }
 
         /** Sends the mutation's error, or the updated word list on success. */

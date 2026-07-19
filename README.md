@@ -79,6 +79,12 @@ recompilation needed. If a file is ever missing or empty, the server falls
 back to a small built-in word list and logs a warning, rather than failing
 to start.
 
+Note: word lists can also be edited from the admin page (see below), and
+those edits are saved to the database and take precedence over the `.txt`
+files at startup. Once a course has been edited that way, changes to its
+`.txt` file only take effect after using the admin page's "Reset to file
+defaults" for that course.
+
 ## AI explanations (optional)
 
 Click "💡 Explain this" during a round to open a modal with an English
@@ -128,12 +134,13 @@ The seed words can also be edited at runtime from the admin page's
 Open `/admin.html` (e.g. `https://your-app.onrender.com/admin.html`) to
 manage the running server from the browser:
 
-- **Word lists**: view, add, remove, and enable/disable words per course at
-  runtime. Unchecking a word keeps it in the list but stops it being
-  quizzed, so it can be brought back later without retyping it. These edits
-  apply to the live server immediately but are in-memory only — a restart
-  or redeploy reloads the original `backend/wordbank/*.txt` files with
-  everything enabled. For permanent changes, edit those files instead.
+- **Word lists**: view, add, remove, and enable/disable words per course.
+  Unchecking a word keeps it in the list but stops it being quizzed, so it
+  can be brought back later without retyping it. Edits apply to the live
+  server immediately and are saved to the database (Firebase when
+  configured, local files otherwise), so they survive restarts and
+  redeploys. "Reset to file defaults" discards a course's saved list and
+  reloads the original `backend/wordbank/*.txt`.
 - **Leaderboard**: view the stored top scores, including when each one was
   recorded.
 - **Access log**: view recent visits to the game's top page (up to 200,
@@ -220,12 +227,13 @@ Setup:
      pasted as the value (it fits on one line)
 
 When both variables are set, the server logs
-`Leaderboard persistence: Firebase Realtime Database` at startup and reads/
-writes the top-10 list at `/leaderboard` in the database (the admin page's
-access log is stored at `/accessLog` the same way). When they are not set
-(e.g. local development), both fall back to local files under
-`backend/data/` exactly as before. The service account key is only ever
-used server-side; never commit it to the repo.
+`Persistence (leaderboard, access log, word lists): Firebase Realtime
+Database` at startup and reads/writes the top-10 list at `/leaderboard` in
+the database (the admin page's access log is stored at `/accessLog`, and
+admin word-list edits at `/wordbank/{difficulty}`, the same way). When they
+are not set (e.g. local development), everything falls back to local files
+under `backend/data/`. The service account key is only ever used
+server-side; never commit it to the repo.
 
 ## API
 
@@ -244,12 +252,15 @@ Admin endpoints (all require the `X-Admin-Password` header matching the
 - `GET /api/admin/words?difficulty=easy` — full word list for a difficulty,
   as `[{"word": "...", "enabled": true}, ...]`
 - `POST /api/admin/words` — `{"difficulty": "...", "word": "..."}`, adds a
-  word at runtime, returns the updated list
+  word, returns the updated list
 - `PUT /api/admin/words` — `{"difficulty": "...", "word": "...",
-  "enabled": false}`, enables/disables a word at runtime (disabled words
-  stay listed but are not quizzed), returns the updated list
-- `DELETE /api/admin/words?difficulty=easy&word=...` — removes a word at
-  runtime, returns the updated list
+  "enabled": false}`, enables/disables a word (disabled words stay listed
+  but are not quizzed), returns the updated list
+- `DELETE /api/admin/words?difficulty=easy&word=...` — removes a word,
+  returns the updated list
+- `POST /api/admin/words/reset` — `{"difficulty": "..."}`, discards the
+  course's saved list and reloads its `.txt` defaults, returns the
+  updated list
 - `GET /api/admin/leaderboard` — top scores including `recordedAt`
 - `GET /api/admin/accesslog` — recent top-page visits (time, IP, browser)
 
