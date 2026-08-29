@@ -171,7 +171,9 @@ public final class Main {
      * generic error.
      */
     static final class ExplainHandler implements HttpHandler {
-        private static final String DEFAULT_MODEL = "llama-3.3-70b-versatile";
+        // Kept in sync with AiSentences.DEFAULT_MODEL; see the note there
+        // about Groq retiring models.
+        private static final String DEFAULT_MODEL = "openai/gpt-oss-120b";
         private static final String GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
         private static final int MAX_SENTENCE_LENGTH = 500;
         private final HttpClient httpClient = HttpClient.newBuilder()
