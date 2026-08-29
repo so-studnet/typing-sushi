@@ -26,7 +26,11 @@ import java.util.List;
  */
 final class AiSentences {
 
-    private static final String DEFAULT_MODEL = "llama-3.3-70b-versatile";
+    // Groq retires models periodically (llama-3.3-70b-versatile was shut
+    // down on 2026-08-16, which broke every AI call with a 400). Keep this
+    // on a current production model and check
+    // console.groq.com/docs/deprecations if AI features start failing.
+    private static final String DEFAULT_MODEL = "openai/gpt-oss-120b";
     private static final String GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
     // One Groq call generates this many sentences; the words API cycles them

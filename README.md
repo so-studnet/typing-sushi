@@ -105,10 +105,19 @@ set "GROQ_API_KEY=your-key-here" && run.bat
 
 Without it, the button still works but shows "AI explanations are not
 configured on this server." instead of failing. The model defaults to
-`llama-3.3-70b-versatile`; override it with `GROQ_MODEL` if needed (see
+`openai/gpt-oss-120b`; override it with `GROQ_MODEL` if needed (see
 [console.groq.com/docs/models](https://console.groq.com/docs/models) for
 currently available model IDs). The API key is only ever used server-side
 and is never sent to the browser.
+
+**If the AI features suddenly stop working**, the model has most likely
+been retired: Groq decommissions models on a schedule, after which every
+request for them fails. Check
+[console.groq.com/docs/deprecations](https://console.groq.com/docs/deprecations)
+against the model in use, then update `GROQ_MODEL` (or the `DEFAULT_MODEL`
+constants in `AiSentences.java` and `Main.java`) to a current one. The
+server logs the exact API error — on Render, the service's **Logs** tab
+shows lines beginning `Groq API error`.
 
 ## Notion AI course (optional)
 
