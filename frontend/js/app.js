@@ -8,7 +8,7 @@
     notion: { label: "Notion", target: 40, difficulty: "notion", rate: 0.05 },
     "notion-ai": { label: "Notion AI", target: 45, difficulty: "notion-ai", rate: 0.05 },
   };
-  const DEFAULT_DURATION = 60;
+  const DEFAULT_DURATION = 6;
   const SUSHI_EMOJI = ["🍣", "🍙", "🍱", "🍤", "🐟", "🍚"];
 
   let selectedDuration = DEFAULT_DURATION;
