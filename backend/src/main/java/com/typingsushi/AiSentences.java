@@ -55,13 +55,19 @@ final class AiSentences {
 
         List<String> seeds = WordBank.get("notion-ai", SEED_COUNT);
         String model = System.getenv().getOrDefault("GROQ_MODEL", DEFAULT_MODEL);
-        String prompt = "You are writing typing-practice sentences for an English learner "
-            + "preparing for the TOEIC test. For each word or phrase in the list below, write "
-            + "exactly one TOEIC-style example sentence set in a business, office, travel, or "
-            + "everyday situation that naturally uses that word or phrase. Each sentence must be "
-            + "8 to 16 words long and use only plain ASCII characters with straight quotes and "
-            + "apostrophes. Output one sentence per line, in the same order as the list, with no "
-            + "numbering, bullets, translations, or any other text. List: " + String.join("; ", seeds);
+        String prompt = "You are creating natural example sentences for an English learner. "
+            + "For each word or phrase in the list below, write exactly one natural, "
+            + "realistic example sentence showing how it is commonly used in an appropriate "
+            + "everyday situation. Choose a situation that fits the meaning and typical usage "
+            + "of each word or phrase, such as casual conversation, work, shopping, travel, "
+            + "relationships, hobbies, or daily life. Make each sentence sound like something "
+            + "a native English speaker would naturally say or write. Use the word or phrase "
+            + "in a meaningful context that helps the learner understand its usage. "
+            + "Do not force a business or test-related context unless it is genuinely appropriate. "
+            + "Output one sentence per line, in the same order as the list, with no numbering, "
+            + "bullets, translations, explanations, or any other text. "
+            + "Use plain ASCII characters with straight quotes and apostrophes. "
+            + "List: " + String.join("; ", seeds);
         String requestBody = "{\"model\":\"" + Json.escape(model) + "\","
             + "\"messages\":[{\"role\":\"user\",\"content\":\"" + Json.escape(prompt) + "\"}]}";
 
